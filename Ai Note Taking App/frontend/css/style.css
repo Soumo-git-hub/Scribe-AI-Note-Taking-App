@@ -1,0 +1,131 @@
+/* General styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+/* Card styles */
+.card {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Notes list */
+.note-card {
+    cursor: pointer;
+}
+
+/* Mind map styles */
+.mindmap-container {
+    position: relative;
+    padding: 20px;
+}
+
+.central-topic {
+    padding: 15px;
+    background-color: #4169E1;
+    color: white;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0 auto 30px;
+    font-weight: bold;
+}
+
+.branches {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.branch {
+    width: 200px;
+    margin-bottom: 20px;
+}
+
+.branch-topic {
+    padding: 10px;
+    background-color: #6495ED;
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.subtopics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subtopic {
+    padding: 8px;
+    background-color: #87CEFA;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Quiz styles */
+.quiz-container {
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.question-item {
+    padding: 10px;
+    border-left: 3px solid #6495ED;
+    background-color: #fff;
+    margin-bottom: 15px;
+}
+
+.options {
+    margin-left: 20px;
+}
+
+/* Active and hover states */
+.btn-primary, .bg-primary {
+    background-color: #4169E1 !important;
+    border-color: #4169E1 !important;
+}
+
+.btn-primary:hover, .btn-primary:active {
+    background-color: #2150c3 !important;
+    border-color: #2150c3 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .branches {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .branch {
+        width: 100%;
+    }
+}
+
+/* Animation effects */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

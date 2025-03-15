@@ -46,7 +46,7 @@ except Exception as e:
 class AIService:
     def __init__(self):
         # Use hardcoded API key
-        self.api_key = "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"
+        self.api_key = "Your_API_Key"
         self.api_url = "https://api-inference.huggingface.co/models/"
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"
         self.use_api = bool(self.api_key)

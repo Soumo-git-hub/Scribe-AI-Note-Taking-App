@@ -148,15 +148,14 @@ class NoteUpdate(BaseModel):
 
 # API Configuration class
 class APIConfig:
-    # Around line 151-163
     def __init__(self):
-        # Use environment variable instead of hardcoded API key
-        self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
+        # Use a placeholder instead of the actual API key
+        self.huggingface_api_key = "YOUR_API_KEY_HERE"  # Replace with your key when running locally
         self.huggingface_api_url = "https://api-inference.huggingface.co/models/"
         # Using only one model for all AI features
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"  # Using Mistral as our single model
-        self.max_retries = 3  # Hardcoded value instead of using env var
-        self.retry_delay = 5  # Hardcoded value instead of using env var
+        self.max_retries = 3
+        self.retry_delay = 5
         
         # Log API configuration for debugging
         logger.info(f"API Key present: {bool(self.huggingface_api_key)}")

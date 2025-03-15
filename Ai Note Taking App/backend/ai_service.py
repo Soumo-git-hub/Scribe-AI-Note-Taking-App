@@ -45,8 +45,8 @@ except Exception as e:
 
 class AIService:
     def __init__(self):
-        # Use environment variable or config file instead of hardcoded API key
-        self.api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
+        # Use a placeholder instead of the actual API key
+        self.api_key = "YOUR_API_KEY_HERE"  # Replace with your key when running locally
         self.api_url = "https://api-inference.huggingface.co/models/"
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"
         self.use_api = bool(self.api_key)

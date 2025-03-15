@@ -15,8 +15,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("api_test")
 
-# Hardcoded API key for testing (replace with your actual API key)
-API_KEY = "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"  # Replace this with your actual API key
+# Use a placeholder instead of the actual API key
+API_KEY = "YOUR_API_KEY_HERE"  # Replace with your key when running locally
 
 def test_api_key():
     """Test if the API key is present and valid"""

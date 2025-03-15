@@ -148,9 +148,10 @@ class NoteUpdate(BaseModel):
 
 # API Configuration class
 class APIConfig:
+    # Around line 151-163
     def __init__(self):
-        # Use the hardcoded API key that we confirmed is working
-        self.huggingface_api_key = "Your_API_Key"
+        # Use environment variable instead of hardcoded API key
+        self.huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
         self.huggingface_api_url = "https://api-inference.huggingface.co/models/"
         # Using only one model for all AI features
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"  # Using Mistral as our single model

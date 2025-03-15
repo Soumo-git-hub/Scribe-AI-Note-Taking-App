@@ -105,43 +105,36 @@ def get_note_by_id(note_id: int) -> Optional[Dict]:
         if conn:
             conn.close()
 
-def save_note(note_data: Dict) -> Optional[Dict]:
+def save_note(title: str, content: str, summary: Optional[str] = None, 
+              quiz: Optional[str] = None, mindmap: Optional[str] = None) -> int:
     """Save a new note to the database."""
     try:
         conn = sqlite3.connect(str(DB_PATH))
         cursor = conn.cursor()
-        
-        # Prepare data for insertion
-        # Convert JSON fields to strings for storage
-        note_to_save = note_data.copy()
-        for field in ['quiz', 'mindmap']:
-            if field in note_to_save and note_to_save[field] and not isinstance(note_to_save[field], str):
-                note_to_save[field] = json.dumps(note_to_save[field])
         
         # Insert the note
         cursor.execute('''
         INSERT INTO notes (title, content, summary, quiz, mindmap)
         VALUES (?, ?, ?, ?, ?)
         ''', (
-            note_to_save.get('title', ''),
-            note_to_save.get('content', ''),
-            note_to_save.get('summary', ''),
-            note_to_save.get('quiz', ''),
-            note_to_save.get('mindmap', '')
+            title,
+            content,
+            summary,
+            quiz,
+            mindmap
         ))
         
         # Get the ID of the inserted note
         note_id = cursor.lastrowid
         conn.commit()
         
-        # Return the saved note with its ID
-        saved_note = {**note_data, 'id': note_id}
-        return saved_note
+        logger.info(f"Note saved with ID: {note_id}")
+        return note_id
     except Exception as e:
         logger.error(f"Error saving note: {str(e)}")
         if conn:
             conn.rollback()
-        return None
+        return -1
     finally:
         if conn:
             conn.close()

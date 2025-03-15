@@ -20,3 +20,96 @@
 2025-03-13 17:44:35,243 - models - INFO - Database initialized successfully
 2025-03-13 17:44:36,571 - models - INFO - Database initialized successfully
 2025-03-13 17:44:36,673 - models - INFO - Database initialized successfully
+2025-03-15 16:28:44,910 - __main__ - INFO - Initializing database...
+2025-03-15 16:28:44,930 - models - INFO - Database initialized successfully
+2025-03-15 16:28:44,931 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:29:00,782 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 16:29:16,804 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 16:29:26,879 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 16:29:32,731 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 16:29:39,458 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 16:31:15,004 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 16:31:20,234 - __main__ - INFO - Shutting down application...
+2025-03-15 16:36:22,843 - __main__ - INFO - Initializing database...
+2025-03-15 16:36:22,847 - models - INFO - Database initialized successfully
+2025-03-15 16:36:22,848 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:36:35,519 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 16:36:42,603 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 16:36:48,687 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 16:44:35,917 - __main__ - INFO - Initializing database...
+2025-03-15 16:44:35,921 - models - INFO - Database initialized successfully
+2025-03-15 16:44:35,924 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:44:35,932 - __main__ - INFO - Shutting down application...
+2025-03-15 16:44:42,734 - __main__ - INFO - Initializing database...
+2025-03-15 16:44:42,736 - models - INFO - Database initialized successfully
+2025-03-15 16:44:42,737 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:44:42,744 - __main__ - INFO - Shutting down application...
+2025-03-15 16:45:42,060 - __main__ - WARNING - Port 8000 is already in use, trying next port...
+2025-03-15 16:45:42,061 - __main__ - INFO - Starting server on port 8001
+2025-03-15 16:45:42,168 - __main__ - INFO - Initializing database...
+2025-03-15 16:45:42,170 - models - INFO - Database initialized successfully
+2025-03-15 16:45:42,170 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:46:09,081 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 16:46:12,504 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 16:46:14,736 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 16:46:19,160 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 16:46:21,716 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 16:48:23,354 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 16:48:28,673 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 16:48:35,698 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 16:50:14,760 - __main__ - INFO - Shutting down application...
+2025-03-15 16:50:19,462 - __main__ - WARNING - Port 8000 is already in use, trying next port...
+2025-03-15 16:50:19,463 - __main__ - INFO - Starting server on port 8001
+2025-03-15 16:50:19,549 - __main__ - INFO - Initializing database...
+2025-03-15 16:50:19,551 - models - INFO - Database initialized successfully
+2025-03-15 16:50:19,552 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:50:35,849 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 16:54:31,802 - __main__ - INFO - Shutting down application...
+2025-03-15 16:54:35,452 - __main__ - WARNING - Port 8000 is already in use, trying next port...
+2025-03-15 16:54:35,454 - __main__ - INFO - Starting server on port 8001
+2025-03-15 16:54:35,705 - __main__ - INFO - Initializing database...
+2025-03-15 16:54:35,734 - models - INFO - Database initialized successfully
+2025-03-15 16:54:35,746 - __main__ - INFO - Database initialized successfully
+2025-03-15 16:54:48,377 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:03:21,530 - __main__ - INFO - Shutting down application...
+2025-03-15 17:09:10,493 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:09:13,448 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 17:09:14,956 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 17:09:31,121 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:18:19,674 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:18:24,242 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 17:18:28,004 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:18:32,872 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 17:18:47,909 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:25:01,560 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:27:07,636 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 17:27:11,424 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 17:27:15,765 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 17:27:18,313 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:27:19,730 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:27:20,533 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:27:20,758 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:27:21,419 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:27:23,131 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 17:36:58,467 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:41:22,168 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:41:54,311 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 17:41:57,972 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 17:47:50,340 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 17:47:56,572 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 18:01:43,089 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 18:01:47,532 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 18:54:28,022 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 18:54:32,297 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 18:54:34,589 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 18:59:42,860 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 19:05:09,487 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 19:05:12,370 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 19:05:15,356 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 19:07:29,959 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 19:07:32,305 - __main__ - ERROR - Failed to update note 2: update_note() got an unexpected keyword argument 'title'
+2025-03-15 19:07:46,392 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 19:08:11,546 - __main__ - INFO - Using fallback mindmap generation (no API key or short content)
+2025-03-15 19:12:27,415 - __main__ - INFO - Using fallback summarization (no API key or short content)
+2025-03-15 19:13:02,609 - __main__ - INFO - Using fallback quiz generation (no API key or short content)
+2025-03-15 19:13:18,537 - __main__ - ERROR - Failed to create note: save_note() got an unexpected keyword argument 'title'

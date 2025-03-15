@@ -1,0 +1,69 @@
+2025-03-15 17:55:33,473 - api_test - INFO - === Starting API Tests ===
+2025-03-15 17:55:33,474 - api_test - INFO - API Key present: True
+2025-03-15 17:55:33,474 - api_test - INFO - API Key length: 37
+2025-03-15 17:55:33,474 - api_test - INFO - 
+--- Testing current model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-15 17:55:33,475 - api_test - INFO - Testing model availability: mistralai/Mistral-7B-Instruct-v0.3
+2025-03-15 17:55:34,456 - api_test - INFO - Model check response status: 200
+2025-03-15 17:55:34,456 - api_test - INFO - Model is available!
+2025-03-15 17:55:34,458 - api_test - INFO - 
+--- Testing task: summarize with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-15 17:55:34,458 - api_test - INFO - Testing API request for task: summarize
+2025-03-15 17:55:34,460 - api_test - INFO - Sending test request to API...
+2025-03-15 17:55:36,480 - api_test - INFO - Request completed in 2.02 seconds
+2025-03-15 17:55:36,480 - api_test - INFO - Response status: 200
+2025-03-15 17:55:36,480 - api_test - INFO - API request successful!
+2025-03-15 17:55:36,481 - api_test - INFO - Response type: <class 'list'>
+2025-03-15 17:55:36,481 - api_test - INFO - Response preview: [{'generated_text': 'Summarize the following text: This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog. This sentence contains 34 characters and ...
+2025-03-15 17:55:36,483 - api_test - INFO - 
+--- Testing task: quiz with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-15 17:55:36,484 - api_test - INFO - Testing API request for task: quiz
+2025-03-15 17:55:36,485 - api_test - INFO - Sending test request to API...
+2025-03-15 17:55:40,377 - api_test - INFO - Request completed in 3.89 seconds
+2025-03-15 17:55:40,379 - api_test - INFO - Response status: 200
+2025-03-15 17:55:40,380 - api_test - INFO - API request successful!
+2025-03-15 17:55:40,381 - api_test - INFO - Response type: <class 'list'>
+2025-03-15 17:55:40,381 - api_test - INFO - Response preview: [{'generated_text': 'Create a quiz based on this text: This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog.\n\nQuestion 1: What is the purpose of...
+2025-03-15 17:55:40,384 - api_test - INFO - 
+--- Testing task: mindmap with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-15 17:55:40,384 - api_test - INFO - Testing API request for task: mindmap
+2025-03-15 17:55:40,385 - api_test - INFO - Sending test request to API...
+2025-03-15 17:55:44,058 - api_test - INFO - Request completed in 3.67 seconds
+2025-03-15 17:55:44,058 - api_test - INFO - Response status: 200
+2025-03-15 17:55:44,059 - api_test - INFO - API request successful!
+2025-03-15 17:55:44,059 - api_test - INFO - Response type: <class 'list'>
+2025-03-15 17:55:44,059 - api_test - INFO - Response preview: [{'generated_text': "Create a mind map for this text: This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog.\n\nHere's a simple mind map for the gi...
+2025-03-15 17:55:44,061 - api_test - INFO - Testing alternative models...
+2025-03-15 17:55:44,061 - api_test - INFO - 
+--- Testing model: google/flan-t5-base ---
+2025-03-15 17:55:44,061 - api_test - INFO - Testing model availability: google/flan-t5-base
+2025-03-15 17:55:44,788 - api_test - INFO - Model check response status: 200
+2025-03-15 17:55:44,789 - api_test - INFO - Model is available!
+2025-03-15 17:55:44,792 - api_test - INFO - Testing API request for task: summarize
+2025-03-15 17:55:44,792 - api_test - INFO - Sending test request to API...
+2025-03-15 17:55:47,781 - api_test - INFO - Request completed in 2.99 seconds
+2025-03-15 17:55:47,782 - api_test - INFO - Response status: 200
+2025-03-15 17:55:47,782 - api_test - INFO - API request successful!
+2025-03-15 17:55:47,782 - api_test - INFO - Response type: <class 'list'>
+2025-03-15 17:55:47,782 - api_test - INFO - Response preview: [{'generated_text': 'The fox jumps over the lazy dog.'}]...
+2025-03-15 17:55:47,784 - api_test - INFO - --- Finished testing: google/flan-t5-base ---
+
+2025-03-15 17:55:47,785 - api_test - INFO - 
+--- Testing model: facebook/bart-large-cnn ---
+2025-03-15 17:55:47,785 - api_test - INFO - Testing model availability: facebook/bart-large-cnn
+2025-03-15 17:55:48,592 - api_test - INFO - Model check response status: 200
+2025-03-15 17:55:48,592 - api_test - INFO - Model is available!
+2025-03-15 17:55:48,595 - api_test - INFO - Testing API request for task: summarize
+2025-03-15 17:55:48,595 - api_test - INFO - Sending test request to API...
+2025-03-15 17:55:49,531 - api_test - INFO - Request completed in 0.94 seconds
+2025-03-15 17:55:49,531 - api_test - INFO - Response status: 503
+2025-03-15 17:55:49,532 - api_test - WARNING - Service unavailable. The model might be loading or under maintenance.
+2025-03-15 17:55:49,532 - api_test - INFO - --- Finished testing: facebook/bart-large-cnn ---
+
+2025-03-15 17:55:49,533 - api_test - INFO - 
+--- Testing model: gpt2 ---
+2025-03-15 17:55:49,533 - api_test - INFO - Testing model availability: gpt2
+2025-03-15 17:55:50,240 - api_test - INFO - Model check response status: 200
+2025-03-15 17:55:50,241 - api_test - INFO - Model is available!
+2025-03-15 17:55:50,243 - api_test - INFO - Testing API request for task: summarize
+2025-03-15 17:55:50,243 - api_test - INFO - Sending test request to API...

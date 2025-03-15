@@ -6,4 +6,7 @@ torch==2.1.0
 pytesseract==0.3.10
 pillow==10.0.1
 pydantic==2.4.2
-numpy==1.25.2# Dependencies 
+numpy==1.25.2
+httpx==0.25.0
+python-dotenv==1.0.0
+requests==2.31.0

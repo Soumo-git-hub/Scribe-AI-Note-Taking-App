@@ -1,6 +1,6 @@
 // API Configuration
-// Make sure this API_URL is correct
-const API_URL = 'http://localhost:8000';
+// Make sure this API_URL is correct - update port if needed
+const API_URL = window.location.protocol + '//' + window.location.hostname + ':8000';
 
 // When fetching notes, ensure you're using the correct URL
 async function fetchNotes() {
@@ -10,7 +10,7 @@ async function fetchNotes() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        return data.notes;
+        return data.notes || [];
     } catch (error) {
         console.error('Error loading notes:', error);
         showAlert('Error loading notes: ' + error.message, 'danger');
@@ -249,33 +249,63 @@ async function deleteCurrentNote() {
 }
 
 // AI Feature Functions
+// Function to generate summary
 async function generateSummary() {
-    const text = elements.content.value;
-    if (!text.trim()) {
-        showAlert('Please enter content to summarize', 'warning');
+    const noteContent = elements.content.value;
+    if (!noteContent.trim()) {
+        showAlert('Please enter some content to summarize', 'warning');
         return;
     }
     
+    // Show loading indicator
+    elements.summaryContent.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p>Generating summary...</p></div>';
+    
     try {
-        // Changed to match your backend API endpoint and format
-        elements.summaryContent.textContent = 'Generating summary...';
+        console.log("Sending content for summarization:", noteContent.substring(0, 50) + "...");
         
         const response = await fetch(`${API_URL}/api/summarize`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: text })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: noteContent })
         });
         
-        if (!response.ok) throw new Error('Failed to generate summary');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
+        console.log("Received summary response:", data);
+        
+        if (!data.summary) {
+            throw new Error("No summary received from API");
+        }
+        
+        // Format and display the summary
+        elements.summaryContent.innerHTML = `
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-robot me-2"></i> AI Summary
+                </div>
+                <div class="card-body">
+                    <p class="card-text">${data.summary}</p>
+                </div>
+            </div>
+        `;
+        
+        // Save the summary data
         summaryData = data.summary;
-        elements.summaryContent.textContent = summaryData;
         
         // Auto-open the summary accordion
         const summaryAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('summary-section'));
         summaryAccordion.show();
+        
+        showAlert('Summary generated successfully!', 'success');
+        
     } catch (error) {
+        console.error('Error generating summary:', error);
+        elements.summaryContent.innerHTML = '<div class="alert alert-danger">Failed to generate summary. Please try again.</div>';
         showAlert('Error generating summary: ' + error.message, 'danger');
     }
 }
@@ -521,23 +551,45 @@ function renderMindMap(mindmap, container) {
         return;
     }
     
-    // Create a simple visual representation
+    // Create a more visually appealing mind map
     let html = `
         <div class="mindmap-container">
-            <div class="central-topic">${mindmap.central}</div>
-            <div class="branches">
+            <div class="central-topic">
+                <div class="central-node">${mindmap.central}</div>
+            </div>
+            <div class="branches-container">
     `;
     
     if (mindmap.branches && mindmap.branches.length) {
-        mindmap.branches.forEach(branch => {
+        // Assign different colors to branches
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA62B', '#A178DF', '#98D8C8'];
+        
+        mindmap.branches.forEach((branch, index) => {
+            const branchColor = colors[index % colors.length];
+            
             html += `
-                <div class="branch">
-                    <div class="branch-topic">${branch.topic}</div>
-                    <div class="subtopics">
-                        ${branch.subtopics && branch.subtopics.length ? 
-                            branch.subtopics.map(sub => `<div class="subtopic">${sub}</div>`).join('') :
-                            '<div class="subtopic">(No subtopics)</div>'
-                        }
+                <div class="branch" style="--branch-color: ${branchColor}">
+                    <div class="branch-line"></div>
+                    <div class="branch-content">
+                        <div class="branch-topic">${branch.topic}</div>
+                        <div class="subtopics">
+            `;
+            
+            if (branch.subtopics && branch.subtopics.length) {
+                branch.subtopics.forEach(subtopic => {
+                    html += `
+                        <div class="subtopic-container">
+                            <div class="subtopic-line"></div>
+                            <div class="subtopic">${subtopic}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<div class="subtopic-container"><div class="subtopic">(No subtopics)</div></div>';
+            }
+            
+            html += `
+                        </div>
                     </div>
                 </div>
             `;
@@ -550,6 +602,151 @@ function renderMindMap(mindmap, container) {
     `;
     
     container.innerHTML = html;
+    
+    // Add CSS for the mind map
+    const style = document.createElement('style');
+    style.textContent = `
+        .mindmap-container {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .central-topic {
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .central-node {
+            background-color: #3498db;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 250px;
+            margin: 0 auto;
+            z-index: 2;
+        }
+        
+        .branches-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+        
+        .branch {
+            flex: 1;
+            min-width: 200px;
+            max-width: 300px;
+            position: relative;
+            --branch-color: #3498db;
+        }
+        
+        .branch-line {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            width: 2px;
+            height: 30px;
+            background-color: var(--branch-color);
+        }
+        
+        .branch-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .branch-topic {
+            background-color: var(--branch-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 30px;
+            text-align: center;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            z-index: 1;
+        }
+        
+        .subtopics {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .subtopic-container {
+            position: relative;
+            padding-left: 15px;
+        }
+        
+        .subtopic-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 15px;
+            height: 2px;
+            background-color: var(--branch-color);
+        }
+        
+        .subtopic {
+            background-color: #f8f9fa;
+            border: 2px solid var(--branch-color);
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .branches-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .branch {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+    `;
+    
+    // Add the style to the container
+    container.appendChild(style);
+    
+    // Add hover effects with JavaScript
+    const branchTopics = container.querySelectorAll('.branch-topic');
+    branchTopics.forEach(topic => {
+        topic.addEventListener('mouseenter', () => {
+            topic.style.transform = 'scale(1.05)';
+            topic.style.transition = 'transform 0.2s ease';
+        });
+        
+        topic.addEventListener('mouseleave', () => {
+            topic.style.transform = 'scale(1)';
+        });
+    });
+    
+    const subtopics = container.querySelectorAll('.subtopic');
+    subtopics.forEach(subtopic => {
+        subtopic.addEventListener('mouseenter', () => {
+            subtopic.style.transform = 'scale(1.03)';
+            subtopic.style.transition = 'transform 0.2s ease';
+        });
+        
+        subtopic.addEventListener('mouseleave', () => {
+            subtopic.style.transform = 'scale(1)';
+        });
+    });
 }
 
 function resetForm() {
@@ -631,41 +828,58 @@ function showAlert(message, type = 'info') {
     }, 3000);
 }
 
-// Function to handle summarization
-async function summarizeContent() {
-    const content = document.getElementById('content').value;
-    
-    if (!content.trim()) {
-        alert('Please enter some content to summarize');
-        return;
-    }
+// Add this function to your main.js file
+
+async function testAIService() {
+    const testContent = elements.content.value || "This is a test content to verify the AI service is working correctly. The AI should generate a summary, quiz, and mind map from this text.";
     
     try {
-        document.getElementById('summary-content').innerHTML = 'Generating summary...';
+        showAlert('Testing AI service...', 'info');
         
-        const response = await fetch(`${API_URL}/api/summarize`, {
+        const response = await fetch(`${API_URL}/api/test-ai`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ content: content }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: testContent })
         });
         
         if (!response.ok) {
-            throw new Error('Server responded with an error');
+            throw new Error(`Server responded with status: ${response.status}`);
         }
         
-        const data = await response.json();
-        document.getElementById('summary-content').innerHTML = data.summary;
-        summaryData = data.summary;
+        const result = await response.json();
         
-        // Open the summary accordion
-        const summaryAccordion = new bootstrap.Collapse(document.getElementById('summary-section'));
-        summaryAccordion.show();
-        
+        if (result.status === 'success') {
+            console.log('AI Test Results:', result);
+            showAlert('AI service test successful! Check console for details.', 'success');
+            
+            // Display the results
+            elements.summaryContent.textContent = result.summary;
+            
+            try {
+                const quizData = JSON.parse(result.quiz);
+                renderQuiz(quizData, elements.quizContent);
+                quizData = quizData; // Update the global variable
+            } catch (e) {
+                console.error('Error parsing quiz data:', e);
+                elements.quizContent.textContent = 'Error parsing quiz data.';
+            }
+            
+            try {
+                const mindmapData = JSON.parse(result.mindmap);
+                renderMindMap(mindmapData, elements.mindmapContent);
+                mindmapData = mindmapData; // Update the global variable
+            } catch (e) {
+                console.error('Error parsing mindmap data:', e);
+                elements.mindmapContent.textContent = 'Error parsing mindmap data.';
+            }
+        } else {
+            throw new Error(result.message || 'Unknown error');
+        }
     } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('summary-content').innerHTML = 'Error generating summary: ' + error.message;
+        console.error('AI Test Error:', error);
+        showAlert(`AI service test failed: ${error.message}`, 'danger');
     }
-
 }
+
+// Add this to your event listeners section
+document.getElementById('testAiBtn').addEventListener('click', testAIService);

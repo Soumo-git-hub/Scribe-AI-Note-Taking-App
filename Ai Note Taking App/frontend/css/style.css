@@ -129,3 +129,23 @@ body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* AI Summary styles */
+#aiSummary .card {
+    border-left: 4px solid #4169E1;
+    margin-bottom: 20px;
+}
+
+#aiSummary .card-header {
+    background-color: #4169E1 !important;
+    font-weight: bold;
+}
+
+#aiSummary .card-body {
+    background-color: #f0f7ff;
+}
+
+#aiSummary .card-text {
+    font-size: 1.1em;
+    line-height: 1.5;
+}

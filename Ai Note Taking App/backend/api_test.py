@@ -66,7 +66,7 @@ def test_model_availability(model_name):
 
 def test_api_request(model_name, task_type="summarize"):
     """Test a simple API request to the model"""
-    api_key = API_KEY
+    api_key = os.getenv("HUGGINGFACE_API_KEY", "")
     api_url = f"https://api-inference.huggingface.co/models/{model_name}"
     
     logger.info(f"Testing API request for task: {task_type}")
@@ -161,7 +161,7 @@ def main():
         return
     
     # Test the current model
-    current_model = "mistralai/Mistral-7B-Instruct-v0.3"  # Hardcoded model name
+    current_model = os.getenv("HUGGINGFACE_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
     logger.info(f"\n--- Testing current model: {current_model} ---")
     
     if test_model_availability(current_model):

@@ -1,201 +1,235 @@
 // API Configuration
-// Make sure this API_URL is correct - update port if needed
 const API_URL = window.location.protocol + '//' + window.location.hostname + ':8000';
 
-// When fetching notes, ensure you're using the correct URL
-async function fetchNotes() {
-    try {
-        const response = await fetch(`${API_URL}/api/notes`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data.notes || [];
-    } catch (error) {
-        console.error('Error loading notes:', error);
-        showAlert('Error loading notes: ' + error.message, 'danger');
-        return [];
-    }
-}
+// Global variables
+let notes = [];
+let currentNote = null;
+let summaryData = null;
+let quizData = null;
+let mindmapData = null;
 
 // DOM Elements
 const elements = {
-    // Navigation
     navNotes: document.getElementById('nav-notes'),
     navCreate: document.getElementById('nav-create'),
-    
-    // Views
     notesView: document.getElementById('notes-view'),
     createEditView: document.getElementById('create-edit-view'),
     noteView: document.getElementById('note-view'),
-    
-    // Notes List
     notesList: document.getElementById('notes-list'),
     createNoteBtn: document.getElementById('create-note-btn'),
-    
-    // Form Elements
     noteForm: document.getElementById('note-form'),
     noteId: document.getElementById('note-id'),
     title: document.getElementById('title'),
     content: document.getElementById('content'),
     formTitle: document.getElementById('form-title'),
-    
-    // AI Tool Buttons
     summarizeBtn: document.getElementById('summarize-btn'),
     quizBtn: document.getElementById('quiz-btn'),
     mindmapBtn: document.getElementById('mindmap-btn'),
     ttsBtn: document.getElementById('tts-btn'),
     uploadHandwritingBtn: document.getElementById('upload-handwriting-btn'),
     handwritingInput: document.getElementById('handwriting-input'),
-    
-    // Form Content Areas
     summaryContent: document.getElementById('summary-content'),
     quizContent: document.getElementById('quiz-content'),
     mindmapContent: document.getElementById('mindmap-content'),
-    
-    // View Note
     viewTitle: document.getElementById('view-title'),
     viewContent: document.getElementById('view-content'),
     viewSummaryContent: document.getElementById('view-summary-content'),
     viewQuizContent: document.getElementById('view-quiz-content'),
     viewMindmapContent: document.getElementById('view-mindmap-content'),
-    
-    // Buttons
     cancelBtn: document.getElementById('cancel-btn'),
     saveBtn: document.getElementById('save-btn'),
     editNoteBtn: document.getElementById('edit-note-btn'),
     deleteNoteBtn: document.getElementById('delete-note-btn'),
     backToListBtn: document.getElementById('back-to-list-btn'),
-    
-    // Delete Modal
     deleteModal: new bootstrap.Modal(document.getElementById('delete-modal')),
     confirmDeleteBtn: document.getElementById('confirm-delete-btn')
 };
 
-// State Management
-let currentNote = null;
-let notes = [];
-let summaryData = null;
-let quizData = null;
-let mindmapData = null;
+// View Management Functions
+// Add this near the top of the file with other global variables
+let stayInEditMode = false;
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    // Navigation
-    elements.navNotes.addEventListener('click', showNotesView);
-    elements.navCreate.addEventListener('click', showCreateView);
-    elements.createNoteBtn.addEventListener('click', showCreateView);
-    
-    // Form Actions
-    elements.noteForm.addEventListener('submit', saveNote);
-    elements.cancelBtn.addEventListener('click', showNotesView);
-    
-    // AI Tools
-    elements.summarizeBtn.addEventListener('click', generateSummary);
-    elements.quizBtn.addEventListener('click', generateQuiz);
-    elements.mindmapBtn.addEventListener('click', generateMindMap);
-    elements.ttsBtn.addEventListener('click', textToSpeech);
-    elements.uploadHandwritingBtn.addEventListener('click', () => elements.handwritingInput.click());
-    elements.handwritingInput.addEventListener('change', processHandwriting);
-    
-    // Note View Actions
-    elements.backToListBtn.addEventListener('click', showNotesView);
-    elements.editNoteBtn.addEventListener('click', editCurrentNote);
-    elements.deleteNoteBtn.addEventListener('click', confirmDeleteNote);
-    elements.confirmDeleteBtn.addEventListener('click', deleteCurrentNote);
-    
-    // Load notes on startup
-    loadNotes();
-});
-
-// View Management
+// Modify the showNotesView function to check if we should stay in edit mode
 function showNotesView() {
-    elements.noteView.style.display = 'none';
-    elements.createEditView.style.display = 'none';
-    elements.notesView.style.display = 'block';
+    console.log('Showing notes view');
+    
+    // Check if we should stay in edit mode
+    if (window.stayInEditMode) {
+        console.log('Staying in edit mode due to recent PDF upload');
+        window.stayInEditMode = false; // Reset the flag
+        
+        // Get the last created note ID
+        const lastNoteId = localStorage.getItem('lastCreatedNoteId');
+        if (lastNoteId) {
+            console.log('Opening last created note:', lastNoteId);
+            editNote(parseInt(lastNoteId));
+            return;
+        }
+    }
+    
+    toggleViews('notesView');
     loadNotes();
 }
 
+// Add this function to handle editing a note by ID
+function editNote(noteId) {
+    if (!noteId) return;
+    
+    console.log('Editing note with ID:', noteId);
+    
+    // Fetch the note data
+    fetch(`${API_URL}/api/notes/${noteId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch note');
+            return response.json();
+        })
+        .then(note => {
+            // Populate the form
+            elements.noteId.value = note.id;
+            elements.title.value = note.title;
+            elements.content.value = note.content;
+            
+            // Update form title
+            elements.formTitle.textContent = 'Edit Note';
+            
+            // Show the edit view
+            toggleViews('createEditView');
+            
+            // Load AI features if available
+            if (note.summary) {
+                elements.summaryContent.innerHTML = note.summary;
+                summaryData = note.summary;
+            }
+            
+            if (note.quiz) {
+                try {
+                    quizData = JSON.parse(note.quiz);
+                } catch (e) {
+                    console.error('Error parsing quiz data:', e);
+                }
+            }
+            
+            if (note.mindmap) {
+                try {
+                    mindmapData = JSON.parse(note.mindmap);
+                } catch (e) {
+                    console.error('Error parsing mindmap data:', e);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching note:', error);
+            showAlert('Error fetching note: ' + error.message, 'danger');
+        });
+}
+
+// Make the editNote function available globally
+window.editNote = editNote;
+
 function showCreateView() {
+    console.log('Showing create view');
     resetForm();
     elements.formTitle.textContent = 'Create New Note';
-    elements.noteView.style.display = 'none';
-    elements.notesView.style.display = 'none';
-    elements.createEditView.style.display = 'block';
+    toggleViews('createEditView');
 }
 
 function showNoteView(note) {
+    console.log('Showing note view for:', note);
     currentNote = note;
     
     elements.viewTitle.textContent = note.title;
     elements.viewContent.innerHTML = formatContent(note.content);
-    elements.viewSummaryContent.innerHTML = note.summary ? formatContent(note.summary) : 'No summary available.';
     
-    // Handle quiz rendering
+    elements.viewSummaryContent.innerHTML = note.summary 
+        ? formatContent(note.summary) 
+        : 'No summary available.';
+    
+    // Handle quiz data
     if (note.quiz) {
         try {
-            renderQuiz(JSON.parse(note.quiz), elements.viewQuizContent);
+            const quizData = JSON.parse(note.quiz);
+            window.aiFeatures.renderQuiz(quizData, elements.viewQuizContent);
         } catch (e) {
-            elements.viewQuizContent.textContent = 'Error displaying quiz.';
+            console.error('Error parsing quiz data:', e);
+            elements.viewQuizContent.textContent = 'Error loading quiz data.';
         }
     } else {
         elements.viewQuizContent.textContent = 'No quiz available.';
     }
     
-    // Handle mindmap rendering
+    // Handle mindmap data
     if (note.mindmap) {
         try {
-            renderMindMap(JSON.parse(note.mindmap), elements.viewMindmapContent);
+            const mindmapData = JSON.parse(note.mindmap);
+            window.aiFeatures.renderMindMap(mindmapData, elements.viewMindmapContent);
         } catch (e) {
-            elements.viewMindmapContent.textContent = 'Error displaying mind map.';
+            console.error('Error parsing mindmap data:', e);
+            elements.viewMindmapContent.textContent = 'Error loading mind map data.';
         }
     } else {
         elements.viewMindmapContent.textContent = 'No mind map available.';
     }
     
-    elements.notesView.style.display = 'none';
-    elements.createEditView.style.display = 'none';
-    elements.noteView.style.display = 'block';
+    toggleViews('noteView');
 }
 
-// API Functions
+function toggleViews(viewToShow) {
+    console.log('Toggling view to:', viewToShow);
+    
+    // Hide all views first
+    elements.notesView.style.display = 'none';
+    elements.createEditView.style.display = 'none';
+    elements.noteView.style.display = 'none';
+    
+    // Show the requested view
+    if (viewToShow === 'notesView') {
+        elements.notesView.style.display = 'block';
+    } else if (viewToShow === 'createEditView') {
+        elements.createEditView.style.display = 'block';
+    } else if (viewToShow === 'noteView') {
+        elements.noteView.style.display = 'block';
+    }
+    
+    // Update active state in navigation
+    elements.navNotes.classList.remove('active');
+    elements.navCreate.classList.remove('active');
+    
+    if (viewToShow === 'notesView') {
+        elements.navNotes.classList.add('active');
+    } else if (viewToShow === 'createEditView') {
+        elements.navCreate.classList.add('active');
+    }
+}
+
+// CRUD Operations
 async function loadNotes() {
     try {
-        // Changed from /notes/ to /api/notes
+        console.log('Loading notes from API...');
         const response = await fetch(`${API_URL}/api/notes`);
-        if (!response.ok) throw new Error('Failed to load notes');
+        
+        if (!response.ok) {
+            console.error('API response not OK:', response.status, response.statusText);
+            throw new Error('Failed to load notes');
+        }
         
         const data = await response.json();
+        console.log('Notes loaded:', data);
         
-        // Add defensive programming to handle different response formats
-        if (data && Array.isArray(data)) {
-            // If the response is directly an array of notes
-            notes = data;
-        } else if (data && data.notes && Array.isArray(data.notes)) {
-            // If the response has a notes property that is an array
-            notes = data.notes;
-        } else if (data && typeof data === 'object') {
-            // If the response is an object but doesn't have a notes array
-            console.warn('Unexpected response format, converting to array:', data);
-            notes = Object.values(data).filter(item => typeof item === 'object');
-        } else {
-            // Fallback to empty array
-            console.error('Unexpected response format:', data);
-            notes = [];
-        }
+        notes = data.notes || [];
+        console.log('Notes array:', notes);
         
         renderNotesList();
     } catch (error) {
         console.error('Error loading notes:', error);
-        showAlert('Error loading notes: ' + error.message, 'danger');
-        notes = []; // Ensure notes is always an array
-        renderNotesList(); // Still render the empty list
+        window.aiFeatures.showAlert('Error loading notes: ' + error.message, 'danger');
+        notes = [];
+        renderNotesList();
     }
 }
 
+// Modify the saveNote function to prevent redirection
 async function saveNote(e) {
     e.preventDefault();
-    
     const noteData = {
         title: elements.title.value,
         content: elements.content.value,
@@ -203,550 +237,211 @@ async function saveNote(e) {
         quiz: quizData ? JSON.stringify(quizData) : null,
         mindmap: mindmapData ? JSON.stringify(mindmapData) : null
     };
-    
+
     try {
-        let response;
-        if (elements.noteId.value) {
-            // Update existing note - changed from /notes/ to /api/notes
-            response = await fetch(`${API_URL}/api/notes/${elements.noteId.value}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(noteData)
-            });
-        } else {
-            // Create new note - changed from /notes/ to /api/notes
-            response = await fetch(`${API_URL}/api/notes`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(noteData)
-            });
-        }
-        
+        const response = await fetch(`${API_URL}/api/notes${elements.noteId.value ? '/' + elements.noteId.value : ''}`, {
+            method: elements.noteId.value ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(noteData)
+        });
+
         if (!response.ok) throw new Error('Failed to save note');
         
-        showAlert('Note saved successfully!', 'success');
-        showNotesView();
+        // Get the response data
+        const responseData = await response.json();
+        
+        // If this was a new note, update the note ID field
+        if (!elements.noteId.value && responseData.id) {
+            elements.noteId.value = responseData.id;
+            elements.formTitle.textContent = 'Edit Note';
+            
+            // Store the ID for potential redirects
+            localStorage.setItem('lastCreatedNoteId', responseData.id);
+            sessionStorage.setItem('lastCreatedNoteId', responseData.id);
+            localStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
+            sessionStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
+            
+            // Update URL without refreshing
+            if (window.history && window.history.pushState) {
+                window.history.pushState(
+                    {noteId: responseData.id}, 
+                    `Edit Note ${responseData.id}`, 
+                    `?view=edit&id=${responseData.id}`
+                );
+            }
+        }
+        
+        // Show success message
+        window.aiFeatures.showAlert('Note saved successfully!', 'success');
+        
+        // Check if we should stay in edit mode
+        if (window.stayInEditMode) {
+            console.log('Staying in edit mode after save due to stayInEditMode flag');
+            // Don't redirect, just stay in the current view
+            return;
+        }
+        
+        // Check if we're in the middle of PDF processing
+        if (window.pdfProcessingInProgress) {
+            console.log('Staying in edit mode after save due to PDF processing');
+            // Don't redirect, just stay in the current view
+            return;
+        }
+        
+        // Check if there's a recent note creation from PDF
+        const lastNoteId = localStorage.getItem('lastCreatedNoteId');
+        const lastTimestamp = parseInt(localStorage.getItem('lastCreatedNoteTimestamp') || '0');
+        const now = Date.now();
+        
+        if (lastNoteId && (now - lastTimestamp < 10000)) {
+            console.log('Staying in edit mode after save due to recent PDF extraction');
+            // Don't redirect, just stay in the current view
+            return;
+        }
+        
+        // Only refresh the notes list in the background
+        loadNotesInBackground();
+        
+        // IMPORTANT: Don't call showNotesView() here to prevent redirection
     } catch (error) {
-        showAlert('Error saving note: ' + error.message, 'danger');
+        console.error('Error saving note:', error);
+        window.aiFeatures.showAlert('Error saving note: ' + error.message, 'danger');
+    }
+}
+
+// New function to load notes in the background without changing the view
+async function loadNotesInBackground() {
+    try {
+        const response = await fetch(`${API_URL}/api/notes`);
+        
+        if (!response.ok) {
+            console.error('API response not OK:', response.status, response.statusText);
+            throw new Error('Failed to load notes');
+        }
+        
+        const data = await response.json();
+        notes = data.notes || [];
+        
+        // Don't render the notes list or change the view
+    } catch (error) {
+        console.error('Error loading notes in background:', error);
     }
 }
 
 async function deleteCurrentNote() {
     try {
-        // Changed from /notes/ to /api/notes
         const response = await fetch(`${API_URL}/api/notes/${currentNote.id}`, {
             method: 'DELETE'
         });
-        
         if (!response.ok) throw new Error('Failed to delete note');
-        
         elements.deleteModal.hide();
-        showAlert('Note deleted successfully!', 'success');
+        window.aiFeatures.showAlert('Note deleted successfully!', 'success');
         showNotesView();
     } catch (error) {
-        showAlert('Error deleting note: ' + error.message, 'danger');
+        window.aiFeatures.showAlert('Error deleting note: ' + error.message, 'danger');
     }
 }
 
-// AI Feature Functions
-// Function to generate summary
+// AI Feature Wrappers (using ai-features.js)
 async function generateSummary() {
     const noteContent = elements.content.value;
-    if (!noteContent.trim()) {
-        showAlert('Please enter some content to summarize', 'warning');
-        return;
-    }
-    
-    // Show loading indicator
-    elements.summaryContent.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p>Generating summary...</p></div>';
-    
     try {
-        console.log("Sending content for summarization:", noteContent.substring(0, 50) + "...");
-        
-        const response = await fetch(`${API_URL}/api/summarize`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ content: noteContent })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        summaryData = await window.aiFeatures.generateSummary(noteContent, elements.summaryContent);
+        if (summaryData) {
+            const summaryAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('summary-section'));
+            summaryAccordion.show();
         }
-        
-        const data = await response.json();
-        console.log("Received summary response:", data);
-        
-        if (!data.summary) {
-            throw new Error("No summary received from API");
-        }
-        
-        // Format and display the summary
-        elements.summaryContent.innerHTML = `
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <i class="fas fa-robot me-2"></i> AI Summary
-                </div>
-                <div class="card-body">
-                    <p class="card-text">${data.summary}</p>
-                </div>
-            </div>
-        `;
-        
-        // Save the summary data
-        summaryData = data.summary;
-        
-        // Auto-open the summary accordion
-        const summaryAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('summary-section'));
-        summaryAccordion.show();
-        
-        showAlert('Summary generated successfully!', 'success');
-        
     } catch (error) {
-        console.error('Error generating summary:', error);
-        elements.summaryContent.innerHTML = '<div class="alert alert-danger">Failed to generate summary. Please try again.</div>';
-        showAlert('Error generating summary: ' + error.message, 'danger');
+        console.error('Error in summary generation:', error);
     }
 }
 
-// Remove the duplicate summarizeContent function at the bottom of the file
-// as it's redundant with the generateSummary function above
-
 async function generateQuiz() {
-    const text = elements.content.value;
-    if (!text.trim()) {
-        showAlert('Please enter content to generate quiz', 'warning');
-        return;
-    }
-    
+    const noteContent = elements.content.value;
     try {
-        elements.quizContent.textContent = 'Generating quiz...';
-        
-        const response = await fetch(`${API_URL}/api/generate-quiz`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: text })
-        });
-        
-        if (!response.ok) throw new Error('Failed to generate quiz');
-        
-        const data = await response.json();
-        quizData = data.quiz;
-        renderQuiz(quizData, elements.quizContent);
-        
-        // Auto-open the quiz accordion
-        const quizAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('quiz-section'));
-        quizAccordion.show();
+        quizData = await window.aiFeatures.generateQuiz(noteContent, elements.quizContent);
+        if (quizData) {
+            const quizAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('quiz-section'));
+            quizAccordion.show();
+        }
     } catch (error) {
-        showAlert('Error generating quiz: ' + error.message, 'danger');
+        console.error('Error in quiz generation:', error);
     }
 }
 
 async function generateMindMap() {
-    const text = elements.content.value;
-    if (!text.trim()) {
-        showAlert('Please enter content to create mind map', 'warning');
-        return;
-    }
-    
+    const noteContent = elements.content.value;
     try {
-        elements.mindmapContent.textContent = 'Generating mind map...';
-        
-        const response = await fetch(`${API_URL}/api/mindmap`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: text })
-        });
-        
-        if (!response.ok) throw new Error('Failed to create mind map');
-        
-        const data = await response.json();
-        mindmapData = data.mindmap;
-        renderMindMap(mindmapData, elements.mindmapContent);
-        
-        // Auto-open the mindmap accordion
-        const mindmapAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('mindmap-section'));
-        mindmapAccordion.show();
+        mindmapData = await window.aiFeatures.generateMindMap(noteContent, elements.mindmapContent);
+        if (mindmapData) {
+            const mindmapAccordion = bootstrap.Collapse.getOrCreateInstance(document.getElementById('mindmap-section'));
+            mindmapAccordion.show();
+        }
     } catch (error) {
-        showAlert('Error creating mind map: ' + error.message, 'danger');
-    }
-}
-
-async function processHandwriting() {
-    const file = elements.handwritingInput.files[0];
-    if (!file) return;
-    
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const response = await fetch(`${API_URL}/handwriting/`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) throw new Error('Failed to process handwriting');
-        
-        const data = await response.json();
-        elements.content.value += '\n\n' + data.text;
-        showAlert('Handwriting processed successfully!', 'success');
-    } catch (error) {
-        showAlert('Error processing handwriting: ' + error.message, 'danger');
+        console.error('Error in mindmap generation:', error);
     }
 }
 
 function textToSpeech() {
     const text = elements.content.value;
-    if (!text.trim()) {
-        showAlert('Please enter content to read aloud', 'warning');
-        return;
-    }
-    
-    // Use browser's built-in speech synthesis
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
+    window.aiFeatures.textToSpeech(text, { language: 'en-US', rate: 1.0 });
 }
 
 // Helper Functions
 function renderNotesList() {
-    elements.notesList.innerHTML = '';
+    console.log('Rendering notes list with', notes.length, 'notes');
     
-    if (notes.length === 0) {
-        elements.notesList.innerHTML = '<div class="col-12"><p>No notes found. Create your first note!</p></div>';
+    if (!elements.notesList) {
+        console.error('Notes list element not found!');
         return;
     }
     
-    notes.forEach(note => {
-        const noteCard = document.createElement('div');
-        noteCard.className = 'col-md-4 mb-4';
-        
-        const summary = note.summary ? note.summary.substring(0, 100) + '...' : 
-                        note.content.substring(0, 100) + '...';
-        
-        noteCard.innerHTML = `
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">${note.title}</h5>
-                    <p class="card-text">${summary}</p>
-                </div>
-                <div class="card-footer d-flex justify-content-end">
-                    <button class="btn btn-sm btn-primary view-note" data-id="${note.id}">
-                        <i class="bi bi-eye"></i> View
-                    </button>
+    if (!notes || notes.length === 0) {
+        elements.notesList.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No notes found. Click "New Note" to create one.
                 </div>
             </div>
         `;
-        
-        elements.notesList.appendChild(noteCard);
-        
-        // Add click event for viewing note
-        noteCard.querySelector('.view-note').addEventListener('click', () => {
-            const selectedNote = notes.find(n => n.id === parseInt(note.id));
+        return;
+    }
+    
+    let html = '';
+    notes.forEach(note => {
+        const truncatedContent = note.content.length > 100 
+            ? note.content.substring(0, 100) + '...' 
+            : note.content;
+            
+        html += `
+            <div class="col-md-4 mb-4">
+                <div class="card note-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">${note.title}</h5>
+                        <p class="card-text">${truncatedContent}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end">
+                        <button class="btn btn-sm btn-primary view-note" data-id="${note.id}">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    elements.notesList.innerHTML = html;
+    
+    // Add event listeners to view buttons
+    document.querySelectorAll('.view-note').forEach(button => {
+        button.addEventListener('click', () => {
+            const noteId = parseInt(button.getAttribute('data-id'));
+            const selectedNote = notes.find(note => note.id === noteId);
             if (selectedNote) showNoteView(selectedNote);
         });
     });
-}
-
-function renderQuiz(quiz, container) {
-    if (!quiz || !quiz.mcq) {
-        container.textContent = 'No quiz data available.';
-        return;
-    }
-
-    let html = '<div class="quiz-container">';
     
-    // Multiple Choice Questions
-    if (quiz.mcq && quiz.mcq.length) {
-        html += '<h4>Multiple Choice Questions</h4>';
-        quiz.mcq.forEach((q, idx) => {
-            html += `
-                <div class="question-item mb-3">
-                    <p><strong>Q${idx+1}:</strong> ${q.question}</p>
-                    <div class="options">
-                        ${q.options.map((opt, i) => `
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="mcq-${idx}" id="mcq-${idx}-${i}">
-                                <label class="form-check-label" for="mcq-${idx}-${i}">${opt}</label>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <p class="mt-2 text-success answer-reveal" style="display:none;"><strong>Answer:</strong> ${q.answer}</p>
-                </div>
-            `;
-        });
-    }
-    
-    // True/False Questions
-    if (quiz.true_false && quiz.true_false.length) {
-        html += '<h4>True or False</h4>';
-        quiz.true_false.forEach((q, idx) => {
-            html += `
-                <div class="question-item mb-3">
-                    <p><strong>Q${idx+1}:</strong> ${q.question}</p>
-                    <div class="options">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="tf-${idx}" id="tf-${idx}-true">
-                            <label class="form-check-label" for="tf-${idx}-true">True</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="tf-${idx}" id="tf-${idx}-false">
-                            <label class="form-check-label" for="tf-${idx}-false">False</label>
-                        </div>
-                    </div>
-                    <p class="mt-2 text-success answer-reveal" style="display:none;"><strong>Answer:</strong> ${q.answer ? 'True' : 'False'}</p>
-                </div>
-            `;
-        });
-    }
-    
-    // Fill in the Blanks
-    if (quiz.fill_blank && quiz.fill_blank.length) {
-        html += '<h4>Fill in the Blanks</h4>';
-        quiz.fill_blank.forEach((q, idx) => {
-            html += `
-                <div class="question-item mb-3">
-                    <p><strong>Q${idx+1}:</strong> ${q.question}</p>
-                    <div class="mt-2 mb-2">
-                        <input type="text" class="form-control form-control-sm" placeholder="Your answer">
-                    </div>
-                    <p class="mt-2 text-success answer-reveal" style="display:none;"><strong>Answer:</strong> ${q.answer}</p>
-                </div>
-            `;
-        });
-    }
-    
-    html += `
-        <div class="d-flex justify-content-between mt-3">
-            <button class="btn btn-outline-primary btn-sm check-answers">Check Answers</button>
-            <button class="btn btn-outline-secondary btn-sm reset-quiz">Reset</button>
-        </div>
-    </div>`;
-    
-    container.innerHTML = html;
-    
-    // Add event listeners for the quiz buttons
-    container.querySelector('.check-answers').addEventListener('click', () => {
-        container.querySelectorAll('.answer-reveal').forEach(el => {
-            el.style.display = 'block';
-        });
-    });
-    
-    container.querySelector('.reset-quiz').addEventListener('click', () => {
-        container.querySelectorAll('input[type="radio"]').forEach(el => {
-            el.checked = false;
-        });
-        container.querySelectorAll('input[type="text"]').forEach(el => {
-            el.value = '';
-        });
-        container.querySelectorAll('.answer-reveal').forEach(el => {
-            el.style.display = 'none';
-        });
-    });
-}
-
-function renderMindMap(mindmap, container) {
-    if (!mindmap || !mindmap.central) {
-        container.textContent = 'No mind map data available.';
-        return;
-    }
-    
-    // Create a more visually appealing mind map
-    let html = `
-        <div class="mindmap-container">
-            <div class="central-topic">
-                <div class="central-node">${mindmap.central}</div>
-            </div>
-            <div class="branches-container">
-    `;
-    
-    if (mindmap.branches && mindmap.branches.length) {
-        // Assign different colors to branches
-        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA62B', '#A178DF', '#98D8C8'];
-        
-        mindmap.branches.forEach((branch, index) => {
-            const branchColor = colors[index % colors.length];
-            
-            html += `
-                <div class="branch" style="--branch-color: ${branchColor}">
-                    <div class="branch-line"></div>
-                    <div class="branch-content">
-                        <div class="branch-topic">${branch.topic}</div>
-                        <div class="subtopics">
-            `;
-            
-            if (branch.subtopics && branch.subtopics.length) {
-                branch.subtopics.forEach(subtopic => {
-                    html += `
-                        <div class="subtopic-container">
-                            <div class="subtopic-line"></div>
-                            <div class="subtopic">${subtopic}</div>
-                        </div>
-                    `;
-                });
-            } else {
-                html += '<div class="subtopic-container"><div class="subtopic">(No subtopics)</div></div>';
-            }
-            
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = html;
-    
-    // Add CSS for the mind map
-    const style = document.createElement('style');
-    style.textContent = `
-        .mindmap-container {
-            font-family: 'Arial', sans-serif;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .central-topic {
-            margin-bottom: 30px;
-            position: relative;
-        }
-        
-        .central-node {
-            background-color: #3498db;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 50px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 250px;
-            margin: 0 auto;
-            z-index: 2;
-        }
-        
-        .branches-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            width: 100%;
-        }
-        
-        .branch {
-            flex: 1;
-            min-width: 200px;
-            max-width: 300px;
-            position: relative;
-            --branch-color: #3498db;
-        }
-        
-        .branch-line {
-            position: absolute;
-            top: -30px;
-            left: 50%;
-            width: 2px;
-            height: 30px;
-            background-color: var(--branch-color);
-        }
-        
-        .branch-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .branch-topic {
-            background-color: var(--branch-color);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 30px;
-            text-align: center;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            z-index: 1;
-        }
-        
-        .subtopics {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 100%;
-        }
-        
-        .subtopic-container {
-            position: relative;
-            padding-left: 15px;
-        }
-        
-        .subtopic-line {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 15px;
-            height: 2px;
-            background-color: var(--branch-color);
-        }
-        
-        .subtopic {
-            background-color: #f8f9fa;
-            border: 2px solid var(--branch-color);
-            color: #333;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .branches-container {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .branch {
-                width: 100%;
-                max-width: 100%;
-            }
-        }
-    `;
-    
-    // Add the style to the container
-    container.appendChild(style);
-    
-    // Add hover effects with JavaScript
-    const branchTopics = container.querySelectorAll('.branch-topic');
-    branchTopics.forEach(topic => {
-        topic.addEventListener('mouseenter', () => {
-            topic.style.transform = 'scale(1.05)';
-            topic.style.transition = 'transform 0.2s ease';
-        });
-        
-        topic.addEventListener('mouseleave', () => {
-            topic.style.transform = 'scale(1)';
-        });
-    });
-    
-    const subtopics = container.querySelectorAll('.subtopic');
-    subtopics.forEach(subtopic => {
-        subtopic.addEventListener('mouseenter', () => {
-            subtopic.style.transform = 'scale(1.03)';
-            subtopic.style.transition = 'transform 0.2s ease';
-        });
-        
-        subtopic.addEventListener('mouseleave', () => {
-            subtopic.style.transform = 'scale(1)';
-        });
-    });
+    console.log('Notes list rendered');
 }
 
 function resetForm() {
@@ -765,36 +460,33 @@ function editCurrentNote() {
     elements.title.value = currentNote.title;
     elements.content.value = currentNote.content;
     elements.formTitle.textContent = 'Edit Note';
-    
-    // Set AI data
+
     summaryData = currentNote.summary;
     if (summaryData) {
         elements.summaryContent.textContent = summaryData;
     }
-    
+
     if (currentNote.quiz) {
         try {
             quizData = JSON.parse(currentNote.quiz);
-            renderQuiz(quizData, elements.quizContent);
+            window.aiFeatures.renderQuiz(quizData, elements.quizContent);
         } catch (e) {
             quizData = null;
             elements.quizContent.textContent = 'Error loading quiz data.';
         }
     }
-    
+
     if (currentNote.mindmap) {
         try {
             mindmapData = JSON.parse(currentNote.mindmap);
-            renderMindMap(mindmapData, elements.mindmapContent);
+            window.aiFeatures.renderMindMap(mindmapData, elements.mindmapContent);
         } catch (e) {
             mindmapData = null;
             elements.mindmapContent.textContent = 'Error loading mind map data.';
         }
     }
-    
-    elements.noteView.style.display = 'none';
-    elements.notesView.style.display = 'none';
-    elements.createEditView.style.display = 'block';
+
+    toggleViews('createEditView');
 }
 
 function confirmDeleteNote() {
@@ -802,84 +494,234 @@ function confirmDeleteNote() {
 }
 
 function formatContent(text) {
-    // Convert plain text to formatted HTML with paragraphs
+    if (!text) return '';
     return text.split('\n\n')
         .map(paragraph => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
         .join('');
 }
 
-function showAlert(message, type = 'info') {
-    // Create alert element
-    const alertEl = document.createElement('div');
-    alertEl.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-    alertEl.role = 'alert';
-    alertEl.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+// Initialize the application
+// Add this to the DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up event listeners
+    if (elements.navNotes) elements.navNotes.addEventListener('click', function(e) {
+        // Don't navigate away during PDF processing
+        if (window.pdfProcessingInProgress) {
+            e.preventDefault();
+            window.aiFeatures.showAlert('Please wait for PDF processing to complete', 'warning');
+            return false;
+        }
+        showNotesView();
+    });
     
-    // Add to document
-    document.body.appendChild(alertEl);
+    if (elements.navCreate) elements.navCreate.addEventListener('click', function(e) {
+        // Don't navigate away during PDF processing
+        if (window.pdfProcessingInProgress) {
+            e.preventDefault();
+            window.aiFeatures.showAlert('Please wait for PDF processing to complete', 'warning');
+            return false;
+        }
+        showCreateView();
+    });
     
-    // Auto dismiss after 3 seconds
-    setTimeout(() => {
-        const bsAlert = new bootstrap.Alert(alertEl);
-        bsAlert.close();
-    }, 3000);
-}
-
-// Add this function to your main.js file
-
-async function testAIService() {
-    const testContent = elements.content.value || "This is a test content to verify the AI service is working correctly. The AI should generate a summary, quiz, and mind map from this text.";
+    if (elements.createNoteBtn) elements.createNoteBtn.addEventListener('click', function(e) {
+        // Don't navigate away during PDF processing
+        if (window.pdfProcessingInProgress) {
+            e.preventDefault();
+            window.aiFeatures.showAlert('Please wait for PDF processing to complete', 'warning');
+            return false;
+        }
+        showCreateView();
+    });
     
-    try {
-        showAlert('Testing AI service...', 'info');
+    if (elements.noteForm) {
+        elements.noteForm.addEventListener('submit', function(e) {
+            // Don't submit if PDF processing is in progress
+            if (window.pdfProcessingInProgress) {
+                e.preventDefault();
+                window.aiFeatures.showAlert('Please wait for PDF processing to complete', 'warning');
+                return false;
+            }
+            saveNote(e);
+        });
+    }
+    if (elements.cancelBtn) elements.cancelBtn.addEventListener('click', showNotesView);
+    if (elements.summarizeBtn) elements.summarizeBtn.addEventListener('click', generateSummary);
+    if (elements.quizBtn) elements.quizBtn.addEventListener('click', generateQuiz);
+    if (elements.mindmapBtn) elements.mindmapBtn.addEventListener('click', generateMindMap);
+    if (elements.ttsBtn) elements.ttsBtn.addEventListener('click', textToSpeech);
+    if (elements.backToListBtn) elements.backToListBtn.addEventListener('click', showNotesView);
+    if (elements.editNoteBtn) elements.editNoteBtn.addEventListener('click', editCurrentNote);
+    if (elements.deleteNoteBtn) elements.deleteNoteBtn.addEventListener('click', confirmDeleteNote);
+    if (elements.confirmDeleteBtn) elements.confirmDeleteBtn.addEventListener('click', deleteCurrentNote);
+    
+    // Load notes on startup
+    loadNotes();
+    
+    // Check URL parameters to see if we should open a specific note in edit mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view');
+    const idParam = urlParams.get('id');
+    
+    if (viewParam === 'edit' && idParam) {
+        console.log('URL parameters indicate edit mode for note:', idParam);
+        editNote(parseInt(idParam));
+    } else {
+        // Check if we have a recent note creation that should be opened in edit mode
+        const lastNoteId = localStorage.getItem('lastCreatedNoteId');
+        const lastTimestamp = parseInt(localStorage.getItem('lastCreatedNoteTimestamp') || '0');
+        const now = Date.now();
         
-        const response = await fetch(`${API_URL}/api/test-ai`, {
+        if (lastNoteId && (now - lastTimestamp < 30000)) {
+            console.log('Found recent note creation, opening in edit mode:', lastNoteId);
+            editNote(parseInt(lastNoteId));
+        } else {
+            // Show notes view by default
+            showNotesView();
+        }
+    }
+    
+    console.log('Application initialized');
+});
+
+// Make loadNotes function available globally
+window.loadNotes = loadNotes;
+
+// Add a function to save PDF content without refreshing
+window.savePdfContent = async function(title, content) {
+    try {
+        const noteData = {
+            title: title || 'Notes from PDF',
+            content: content,
+            summary: null,
+            quiz: null,
+            mindmap: null
+        };
+
+        const response = await fetch(`${API_URL}/api/notes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: testContent })
+            body: JSON.stringify(noteData)
         });
-        
-        if (!response.ok) {
-            throw new Error(`Server responded with status: ${response.status}`);
-        }
+
+        if (!response.ok) throw new Error('Failed to save PDF content');
         
         const result = await response.json();
+        window.aiFeatures.showAlert('PDF content saved as a new note!', 'success');
         
-        if (result.status === 'success') {
-            console.log('AI Test Results:', result);
-            showAlert('AI service test successful! Check console for details.', 'success');
-            
-            // Display the results
-            elements.summaryContent.textContent = result.summary;
-            
-            try {
-                const quizData = JSON.parse(result.quiz);
-                renderQuiz(quizData, elements.quizContent);
-                quizData = quizData; // Update the global variable
-            } catch (e) {
-                console.error('Error parsing quiz data:', e);
-                elements.quizContent.textContent = 'Error parsing quiz data.';
-            }
-            
-            try {
-                const mindmapData = JSON.parse(result.mindmap);
-                renderMindMap(mindmapData, elements.mindmapContent);
-                mindmapData = mindmapData; // Update the global variable
-            } catch (e) {
-                console.error('Error parsing mindmap data:', e);
-                elements.mindmapContent.textContent = 'Error parsing mindmap data.';
-            }
-        } else {
-            throw new Error(result.message || 'Unknown error');
-        }
+        // Refresh the notes list without changing the view
+        await loadNotes();
+        
+        return result.id;
     } catch (error) {
-        console.error('AI Test Error:', error);
-        showAlert(`AI service test failed: ${error.message}`, 'danger');
+        console.error('Error saving PDF content:', error);
+        window.aiFeatures.showAlert('Error saving PDF content: ' + error.message, 'danger');
+        return null;
     }
-}
+};
 
-// Add this to your event listeners section
-document.getElementById('testAiBtn').addEventListener('click', testAIService);
+// Add this function after the document ready event
+
+// Helper function to edit a note by ID
+window.editNote = function(noteId) {
+    if (!noteId) return;
+    
+    console.log('Opening note for editing:', noteId);
+    
+    // Fetch the note data
+    fetch(`${API_URL}/api/notes/${noteId}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch note');
+            return response.json();
+        })
+        .then(note => {
+            // Populate the form
+            document.getElementById('note-id').value = note.id;
+            document.getElementById('title').value = note.title;
+            document.getElementById('content').value = note.content;
+            
+            // Update form title
+            const formTitle = document.getElementById('form-title');
+            if (formTitle) formTitle.textContent = 'Edit Note';
+            
+            // Show the edit view
+            toggleViews('createEditView');
+            
+            // Load AI features if available
+            if (note.summary) {
+                const summaryContent = document.getElementById('summary-content');
+                if (summaryContent) {
+                    summaryContent.innerHTML = `
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-robot me-2"></i> AI Summary
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">${note.summary}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                window.summaryData = note.summary;
+            }
+            
+            if (note.quiz) {
+                try {
+                    const quizData = JSON.parse(note.quiz);
+                    const quizContent = document.getElementById('quiz-content');
+                    if (quizContent && window.aiFeatures && window.aiFeatures.renderQuiz) {
+                        window.aiFeatures.renderQuiz(quizData, quizContent);
+                    }
+                    window.quizData = quizData;
+                } catch (e) {
+                    console.error('Error parsing quiz data:', e);
+                }
+            }
+            
+            if (note.mindmap) {
+                try {
+                    const mindmapData = JSON.parse(note.mindmap);
+                    const mindmapContent = document.getElementById('mindmap-content');
+                    if (mindmapContent && window.aiFeatures && window.aiFeatures.renderMindMap) {
+                        window.aiFeatures.renderMindMap(mindmapData, mindmapContent);
+                    }
+                    window.mindmapData = mindmapData;
+                } catch (e) {
+                    console.error('Error parsing mindmap data:', e);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching note:', error);
+            showAlert('Error fetching note: ' + error.message, 'danger');
+        });
+};
+
+// Add this at the end of the file
+// Global function to force edit mode for a specific note
+window.forceEditMode = function(noteId) {
+    if (!noteId) return;
+    
+    console.log('Forcing edit mode for note:', noteId);
+    
+    // Set a flag to stay in edit mode
+    window.stayInEditMode = true;
+    
+    // Store the ID in localStorage and sessionStorage for redundancy
+    localStorage.setItem('lastCreatedNoteId', noteId);
+    sessionStorage.setItem('lastCreatedNoteId', noteId);
+    localStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
+    sessionStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
+    
+    // Call the editNote function
+    editNote(parseInt(noteId));
+    
+    // Update URL without refreshing
+    if (window.history && window.history.pushState) {
+        window.history.pushState(
+            {noteId: noteId}, 
+            `Edit Note ${noteId}`, 
+            `?view=edit&id=${noteId}`
+        );
+    }
+};

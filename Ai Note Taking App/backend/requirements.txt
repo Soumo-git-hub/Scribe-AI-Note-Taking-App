@@ -1,3 +1,6 @@
+flask==2.0.1
+flask-cors==3.0.10
+fpdf==1.7.2
 fastapi==0.104.1
 uvicorn==0.23.2
 python-multipart==0.0.6
@@ -11,3 +14,4 @@ httpx==0.25.0
 python-dotenv==1.0.0
 requests==2.31.0
 PyMuPDF==1.23.8
+pypdf==3.15.1

@@ -11,25 +11,61 @@
     --hover-color: rgba(0, 10, 153, 0.9); /* Darker Blue for Hover */
     --success-color: #4caf50;
     --danger-color: #f44336;
+    --body-bg: #ffffff;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-text: #333333;
+}
+
+/* Dark mode theme */
+[data-theme="dark"] {
+    --primary-color: rgba(0, 10, 153, 1); /* Keep the same primary color */
+    --secondary-color: rgba(0, 10, 153, 0.8);
+    --accent-color: rgba(0, 10, 153, 0.6);
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #9e9e9e;
+    --light-bg: #1e1e1e;
+    --border-color: #424242;
+    --hover-color: rgba(0, 10, 153, 0.9);
+    --success-color: #4caf50;
+    --danger-color: #f44336;
+    --body-bg: #121212;
+    --card-bg: #1e1e1e;
+    --input-bg: #2d2d2d;
+    --input-text: #e0e0e0;
 }
 
 /* General styles */
 body {
-    background-color: #ffffff;
+    background-color: var(--body-bg);
     font-family: 'Inter', 'Segoe UI', sans-serif;
     color: var(--primary-color);
     line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    padding: 0;
+}
+
+/* Dark mode adjustments for text */
+[data-theme="dark"] body {
+    color: var(--text-secondary);
 }
 
 .navbar {
     background-color: var(--primary-color) !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    padding: 0.8rem 1rem;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .navbar-brand {
     font-weight: 600;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
 }
 
 .navbar-brand i {
@@ -39,6 +75,7 @@ body {
 .nav-link {
     font-weight: 500;
     transition: all 0.2s ease;
+    margin: 0 10px;
 }
 
 .nav-link:hover {
@@ -48,10 +85,11 @@ body {
 /* Card styles */
 .card {
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    background-color: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+    background-color: var(--card-bg);
+    overflow: hidden;
 }
 
 .card:hover {
@@ -59,12 +97,125 @@ body {
     box-shadow: 0 8px 25px rgba(0,0,0,0.12);
 }
 
+/* Dark mode adjustments for cards */
+[data-theme="dark"] .card {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* Form controls */
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--border-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--accent-color);
+}
+
+/* Dark mode toggle button */
+.theme-toggle {
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-left: 10px;
+    border: none;
+    color: var(--text-primary);
+}
+
+.theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: rotate(15deg);
+}
+
+.theme-toggle i {
+    font-size: 1.4rem;
+}
+
+/* Additional dark mode styles for scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #555;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Dark mode for accordion */
+[data-theme="dark"] .accordion-button {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+    background-color: #2d2d2d;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .accordion-body {
+    background-color: #1a1a1a;
+    color: var(--text-secondary);
+}
+
+/* Dark mode for loading animation */
+[data-theme="dark"] .loading:after {
+    background: rgba(18, 18, 18, 0.8);
+}
+
+[data-theme="dark"] .loading:before {
+    border: 3px solid #333;
+    border-top: 3px solid var(--primary-color);
+}
+
+/* Additional dark mode styles for other elements */
+[data-theme="dark"] .note-card {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .note-card .card-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .note-card .card-text {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+/* Dark mode for code blocks and pre elements */
+[data-theme="dark"] pre,
+[data-theme="dark"] code {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+
 .card-header {
     background-color: var(--primary-color) !important;
     color: var(--text-primary) !important;
-    border-radius: 8px 8px 0 0 !important;
-    padding: 1rem 1.5rem;
-    font-weight: 500;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 1.25rem 1.5rem;
+    font-weight: 600;
 }
 
 .card-body {
@@ -74,8 +225,8 @@ body {
 /* Button styles */
 .btn {
     font-weight: 500;
-    border-radius: 6px;
-    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
     transition: all 0.2s ease;
 }
 
@@ -115,8 +266,8 @@ body {
 }
 
 .btn-sm {
-    padding: 0.3rem 0.8rem;
-    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
 }
 
 /* Notes list */
@@ -124,20 +275,22 @@ body {
     cursor: pointer;
     height: 100%;
     transition: all 0.3s ease;
-    border-left: 4px solid var(--primary-color);
+    border-left: 6px solid var(--primary-color);
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .note-card:hover {
-    border-left: 4px solid var(--accent-color);
+    border-left: 6px solid var(--accent-color);
 }
 
 .note-card .card-body {
-    padding: 1.25rem;
+    padding: 1.5rem;
 }
 
 .note-card h5 {
     font-weight: 600;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     color: var(--primary-color);
 }
 
@@ -155,9 +308,9 @@ body {
 
 /* Form controls */
 .form-control {
-    border-radius: 6px;
-    padding: 0.6rem 1rem;
-    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
     transition: all 0.2s ease;
 }
 
@@ -179,7 +332,7 @@ textarea.form-control {
 
 /* Accordion styles */
 .accordion {
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
@@ -194,7 +347,7 @@ textarea.form-control {
 }
 
 .accordion-button {
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.5rem;
     font-weight: 500;
     color: var(--primary-color);
     background-color: white;
@@ -320,16 +473,16 @@ textarea.form-control {
 .quiz-container {
     padding: 20px;
     background-color: #fafafa;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-top: 20px;
 }
 
 .question-item {
     padding: 15px 20px;
-    border-left: 4px solid var(--primary-color);
+    border-left: 6px solid var(--primary-color);
     background-color: white;
     margin-bottom: 20px;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 10px 10px 0;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
@@ -344,9 +497,9 @@ textarea.form-control {
 }
 
 .option-item {
-    padding: 8px 15px;
-    border-radius: 6px;
-    margin-bottom: 8px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
     background-color: #f5f5f5;
     transition: all 0.2s ease;
 }
@@ -359,22 +512,30 @@ textarea.form-control {
 #summary-content, #view-summary-content {
     background-color: #fafafa;
     padding: 15px;
-    border-radius: 6px;
-    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    border-left: 6px solid var(--primary-color);
+}
+
+/* Dark mode for summary content */
+[data-theme="dark"] #summary-content,
+[data-theme="dark"] #view-summary-content {
+    background-color: #2d2d2d;
+    color: var(--text-secondary);
+    border-left: 6px solid var(--primary-color);
 }
 
 /* Modal styles */
 .modal-content {
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 .modal-header {
     background-color: var(--primary-color);
     color: white;
-    border-radius: 10px 10px 0 0;
-    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0;
+    padding: 1.5rem 1.5rem;
 }
 
 .modal-title {
@@ -386,7 +547,7 @@ textarea.form-control {
 }
 
 .modal-footer {
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.5rem;
     border-top: 1px solid #eeeeee;
 }
 
@@ -416,14 +577,14 @@ textarea.form-control {
     }
 
     .btn-sm {
-        padding: 0.25rem 0.6rem;
-        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
     }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -432,7 +593,7 @@ textarea.form-control {
 
 ::-webkit-scrollbar-thumb {
     background: #c1c1c1;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -486,4 +647,910 @@ textarea.form-control {
 
 #notes-view.active, #create-edit-view.active, #note-view.active {
     display: block !important; /* Use !important to override any inline styles */
+}
+
+/* Additional dark mode styles for specific components */
+
+/* Dark mode for alerts */
+[data-theme="dark"] .alert {
+    background-color: #2d2d2d;
+    color: var(--text-secondary);
+    border-color: #444;
+}
+
+[data-theme="dark"] .alert-success {
+    background-color: rgba(76, 175, 80, 0.2);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+[data-theme="dark"] .alert-danger {
+    background-color: rgba(244, 67, 54, 0.2);
+    border-color: rgba(244, 67, 54, 0.5);
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.5);
+}
+
+/* Dark mode for quiz elements */
+[data-theme="dark"] .question-item {
+    background-color: #2d2d2d;
+    border-left: 6px solid var(--primary-color);
+}
+
+[data-theme="dark"] .option-item {
+    background-color: #333;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .option-item:hover {
+    background-color: #444;
+}
+
+/* Dark mode for quiz container */
+[data-theme="dark"] .quiz-container {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+}
+
+[data-theme="dark"] .option-item {
+    background-color: #333;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .option-item:hover {
+    background-color: #444;
+}
+
+/* Dark mode for mind map */
+[data-theme="dark"] .central-node {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .branch-node {
+    background-color: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Transition for smoother theme switching */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Modern Dark Blue Theme for Smart Notes */
+:root {
+    --primary-color: rgba(0, 10, 153, 1); /* Dark Blue */
+    --secondary-color: rgba(0, 10, 153, 0.8); /* Slightly Lighter Blue */
+    --accent-color: rgba(0, 10, 153, 0.6); /* Even Lighter Blue */
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #9e9e9e;
+    --light-bg: #f5f5f5;
+    --border-color: #424242;
+    --hover-color: rgba(0, 10, 153, 0.9); /* Darker Blue for Hover */
+    --success-color: #4caf50;
+    --danger-color: #f44336;
+    --body-bg: #ffffff;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-text: #333333;
+}
+
+/* Dark mode theme */
+[data-theme="dark"] {
+    --primary-color: rgba(0, 10, 153, 1); /* Keep the same primary color */
+    --secondary-color: rgba(0, 10, 153, 0.8);
+    --accent-color: rgba(0, 10, 153, 0.6);
+    --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
+    --text-muted: #9e9e9e;
+    --light-bg: #1e1e1e;
+    --border-color: #424242;
+    --hover-color: rgba(0, 10, 153, 0.9);
+    --success-color: #4caf50;
+    --danger-color: #f44336;
+    --body-bg: #121212;
+    --card-bg: #1e1e1e;
+    --input-bg: #2d2d2d;
+    --input-text: #e0e0e0;
+}
+
+/* General styles */
+body {
+    background-color: var(--body-bg);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: var(--primary-color);
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    margin: 0;
+    padding: 0;
+}
+
+/* Dark mode adjustments for text */
+[data-theme="dark"] body {
+    color: var(--text-secondary);
+}
+
+.navbar {
+    background-color: var(--primary-color) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-brand {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin: 0 10px;
+}
+
+.nav-link:hover {
+    color: var(--text-muted) !important;
+}
+
+/* Card styles */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+    background-color: var(--card-bg);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+/* Dark mode adjustments for cards */
+[data-theme="dark"] .card {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+/* Form controls */
+.form-control, .form-select {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--border-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    border-color: var(--accent-color);
+}
+
+/* Dark mode toggle button */
+.theme-toggle {
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-left: 10px;
+    border: none;
+    color: var(--text-primary);
+}
+
+.theme-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: rotate(15deg);
+}
+
+.theme-toggle i {
+    font-size: 1.4rem;
+}
+
+/* Additional dark mode styles for scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #555;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Dark mode for accordion */
+[data-theme="dark"] .accordion-button {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .accordion-button:not(.collapsed) {
+    background-color: #2d2d2d;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .accordion-body {
+    background-color: #1a1a1a;
+    color: var(--text-secondary);
+}
+
+/* Dark mode for loading animation */
+[data-theme="dark"] .loading:after {
+    background: rgba(18, 18, 18, 0.8);
+}
+
+[data-theme="dark"] .loading:before {
+    border: 3px solid #333;
+    border-top: 3px solid var(--primary-color);
+}
+
+/* Additional dark mode styles for other elements */
+[data-theme="dark"] .note-card {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .note-card .card-title {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .note-card .card-text {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+/* Dark mode for code blocks and pre elements */
+[data-theme="dark"] pre,
+[data-theme="dark"] code {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border-radius: 6px;
+    padding: 0.5rem;
+}
+
+.card-header {
+    background-color: var(--primary-color) !important;
+    color: var(--text-primary) !important;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 1.25rem 1.5rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Button styles */
+.btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--hover-color) !important;
+    border-color: var(--hover-color) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-secondary {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
+}
+
+.btn-secondary:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-danger {
+    background-color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* Notes list */
+.note-card {
+    cursor: pointer;
+    height: 100%;
+    transition: all 0.3s ease;
+    border-left: 6px solid var(--primary-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.note-card:hover {
+    border-left: 6px solid var(--accent-color);
+}
+
+.note-card .card-body {
+    padding: 1.5rem;
+}
+
+.note-card h5 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.note-card p {
+    color: var(--accent-color);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.note-card small {
+    color: var(--text-muted);
+}
+
+/* Form controls */
+.form-control {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 10, 153, 0.15);
+    border-color: var(--primary-color);
+}
+
+textarea.form-control {
+    min-height: 250px;
+    line-height: 1.6;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+/* Accordion styles */
+.accordion {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.accordion-item {
+    border: none;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.accordion-item:last-child {
+    border-bottom: none;
+}
+
+.accordion-button {
+    padding: 1.5rem 1.5rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    background-color: white;
+}
+
+.accordion-button:not(.collapsed) {
+    color: var(--primary-color);
+    background-color: #f8f8f8;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0, 10, 153, 0.1);
+}
+
+.accordion-body {
+    padding: 1.5rem;
+    background-color: #fafafa;
+}
+
+/* Mind Map Styles */
+.mindmap-container {
+    font-family: 'Arial', sans-serif;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.central-topic {
+    margin-bottom: 30px;
+    position: relative;
+}
+.central-node {
+    background-color: #3498db;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 250px;
+    margin: 0 auto;
+    z-index: 2;
+}
+.branches-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+}
+.branch {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+    position: relative;
+    --branch-color: #3498db;
+}
+.branch-line {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    width: 2px;
+    height: 30px;
+    background-color: var(--branch-color);
+}
+.branch-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.branch-topic {
+    background-color: var(--branch-color);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 30px;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    z-index: 1;
+}
+.subtopics {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+.subtopic-container {
+    position: relative;
+    padding-left: 15px;
+}
+.subtopic-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 15px;
+    height: 2px;
+    background-color: var(--branch-color);
+}
+.subtopic {
+    background-color: #f8f9fa;
+    border: 2px solid var(--branch-color);
+    color: #333;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+@media (max-width: 768px) {
+    .branches-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    .branch {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+/* Quiz styles */
+.quiz-container {
+    padding: 20px;
+    background-color: #fafafa;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.question-item {
+    padding: 15px 20px;
+    border-left: 6px solid var(--primary-color);
+    background-color: white;
+    margin-bottom: 20px;
+    border-radius: 0 10px 10px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.question-item h5 {
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.options {
+    margin-left: 20px;
+}
+
+.option-item {
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #f5f5f5;
+    transition: all 0.2s ease;
+}
+
+.option-item:hover {
+    background-color: #e8e8e8;
+}
+
+/* AI Summary styles */
+#summary-content, #view-summary-content {
+    background-color: #fafafa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 6px solid var(--primary-color);
+}
+
+/* Dark mode for summary content */
+[data-theme="dark"] #summary-content,
+[data-theme="dark"] #view-summary-content {
+    background-color: #2d2d2d;
+    color: var(--text-secondary);
+    border-left: 6px solid var(--primary-color);
+}
+
+/* Modal styles */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    padding: 1.5rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem 1.5rem;
+    border-top: 1px solid #eeeeee;
+}
+
+/* Utility classes */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .branches {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .branch {
+        width: 100%;
+    }
+
+    .card-header h3 {
+        font-size: 1.4rem;
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Add a subtle loading animation */
+.loading {
+    position: relative;
+}
+
+.loading:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+    z-index: 10;
+}
+
+.loading:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 11;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* View visibility styles */
+#notes-view, #create-edit-view, #note-view {
+    display: none;
+}
+
+#notes-view.active, #create-edit-view.active, #note-view.active {
+    display: block !important; /* Use !important to override any inline styles */
+}
+
+/* Additional dark mode styles for specific components */
+
+/* Dark mode for alerts */
+[data-theme="dark"] .alert {
+    background-color: #2d2d2d;
+    color: var(--text-secondary);
+    border-color: #444;
+}
+
+[data-theme="dark"] .alert-success {
+    background-color: rgba(76, 175, 80, 0.2);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+[data-theme="dark"] .alert-danger {
+    background-color: rgba(244, 67, 54, 0.2);
+    border-color: rgba(244, 67, 54, 0.5);
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.5);
+}
+
+/* Dark mode for quiz elements */
+[data-theme="dark"] .question-item {
+    background-color: #2d2d2d;
+    border-left: 6px solid var(--primary-color);
+}
+
+[data-theme="dark"] .option-item {
+    background-color: #333;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .option-item:hover {
+    background-color: #444;
+}
+
+/* Dark mode for quiz container */
+[data-theme="dark"] .quiz-container {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+}
+
+[data-theme="dark"] .option-item {
+    background-color: #333;
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .option-item:hover {
+    background-color: #444;
+}
+
+/* Dark mode for mind map */
+[data-theme="dark"] .central-node {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .branch-node {
+    background-color: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Transition for smoother theme switching */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Add this to your style.css file */
+.markdown-preview {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 0.75rem;
+    min-height: 200px;
+}
+
+[data-theme="dark"] .markdown-preview {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border-color: #444;
+}
+
+/* Apply markdown styling to the preview as well */
+.markdown-preview h1, 
+.markdown-preview h2, 
+.markdown-preview h3, 
+.markdown-preview h4, 
+.markdown-preview h5, 
+.markdown-preview h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.markdown-preview h1 {
+    font-size: 2rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.markdown-preview h2 {
+    font-size: 1.75rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.3rem;
+}
+
+.markdown-preview h3 {
+    font-size: 1.5rem;
+}
+
+.markdown-preview h4 {
+    font-size: 1.25rem;
+}
+
+.markdown-preview h5 {
+    font-size: 1.1rem;
+}
+
+.markdown-preview h6 {
+    font-size: 1rem;
+}
+
+.markdown-preview blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1rem;
+    margin-left: 0;
+    color: var(--text-muted);
+}
+
+.markdown-preview pre {
+    background-color: #f5f5f5;
+    padding: 1rem;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+.markdown-preview code {
+    background-color: #f5f5f5;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.markdown-preview pre code {
+    padding: 0;
+    background-color: transparent;
+}
+
+.markdown-preview ul, 
+.markdown-preview ol {
+    padding-left: 2rem;
+}
+
+.markdown-preview table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.markdown-preview th, 
+.markdown-preview td {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+}
+
+.markdown-preview th {
+    background-color: #f5f5f5;
+}
+
+[data-theme="dark"] .markdown-preview pre,
+[data-theme="dark"] .markdown-preview code {
+    background-color: #333;
+    color: #e0e0e0;
+}
+
+[data-theme="dark"] .markdown-preview th {
+    background-color: #333;
+}
+
+[data-theme="dark"] .markdown-preview blockquote {
+    color: #9e9e9e;
 }

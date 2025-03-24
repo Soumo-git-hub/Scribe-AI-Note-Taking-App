@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Notes - AI-Powered Note Taking</title>
+    <title> ScapyScribe </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/style.css">
@@ -11,7 +11,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="bi bi-journal-text"></i> Smart Notes</a>
+            <a class="navbar-brand" href="#"><i class="bi bi-journal-text"></i> Synap Scribe </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -22,6 +22,11 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#" id="nav-create">Create Note</a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button id="theme-toggle" class="btn btn-link nav-link theme-toggle" aria-label="Toggle Dark Mode">
+                            <i class="bi bi-sun-fill" id="theme-icon"></i>
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -216,6 +221,10 @@
     <!-- Scripts in correct order for proper initialization -->
     <script src="js/ai-features.js"></script>
     <script src="js/pdf-handler.js"></script>
+    
+    <!-- Keep only this line -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="js/dark-mode.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

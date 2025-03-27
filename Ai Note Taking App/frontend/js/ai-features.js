@@ -535,6 +535,17 @@ async function testAIService(content, summaryContainer, quizContainer, mindmapCo
     }
 }
 
+// Add this function to remove alerts by ID
+function removeAlert(id) {
+    if (!id) return;
+    
+    const alert = document.getElementById(id);
+    if (alert) {
+        alert.classList.remove('show');
+        setTimeout(() => alert.remove(), 150);
+    }
+}
+
 // Export functions to be used in main.js
 window.aiFeatures = {
     generateSummary,

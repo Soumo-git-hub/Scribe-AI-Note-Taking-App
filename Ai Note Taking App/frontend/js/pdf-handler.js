@@ -228,118 +228,81 @@ async function handlePdfUpload(event) {
 
         // Set a longer timeout for larger files
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
 
-        // Use fetch with manual handling to prevent page navigation
         const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,
             signal: controller.signal
         });
-
-        // Clear the timeout
+        
         clearTimeout(timeoutId);
-
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
         
-        // Get response as JSON
-        const data = await response.json();
+        const result = await response.json();
         
-        // Handle response
-        if (data.success && data.text) {
-            // Add the extracted text to the content
-            const newContent = originalContent + (originalContent ? '\n\n' : '') + data.text;
-            contentArea.value = newContent;
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to process PDF');
+        }
+        
+        // Get the extracted text
+        const extractedText = result.text;
+        const suggestedTitle = result.title || 'Notes from PDF';
+        
+        if (!extractedText || extractedText.trim().length === 0) {
+            throw new Error('No text could be extracted from the PDF');
+        }
+        
+        console.log(`Successfully extracted ${extractedText.length} characters from PDF`);
+        
+        // Update the content area with the extracted text
+        if (contentArea) {
+            // Format the extracted text as markdown
+            contentArea.value = extractedText;
             
-            // Set a default title if none exists
-            if (titleInput && (!titleInput.value || titleInput.value === 'New Note')) {
-                titleInput.value = data.title || 'Notes from ' + file.name;
+            // Update the title if it's empty
+            if (titleInput && (!titleInput.value || titleInput.value.trim() === '')) {
+                titleInput.value = suggestedTitle;
             }
             
-            // Save the note and get its ID
-            let savedNoteId = null;
-            try {
-                const noteId = document.getElementById('note-id').value;
-                const method = noteId ? 'PUT' : 'POST';
-                const url = `${PDF_API_URL}/api/notes${noteId ? '/' + noteId : ''}`;
+            // Important: Save the note immediately to prevent loss of data
+            // But don't navigate away from the page
+            window.stayInEditMode = true;
+            
+            // Create a new note with the extracted content
+            const savedNote = await window.savePdfContent(
+                titleInput ? titleInput.value : suggestedTitle,
+                extractedText
+            );
+            
+            if (savedNote && savedNote.id) {
+                // Store the ID for later use
+                localStorage.setItem('lastCreatedNoteId', savedNote.id);
+                localStorage.setItem('lastCreatedNoteTimestamp', Date.now());
                 
-                const noteData = {
-                    title: titleInput.value,
-                    content: contentArea.value,
-                    summary: window.summaryData || null,
-                    quiz: window.quizData ? JSON.stringify(window.quizData) : null,
-                    mindmap: window.mindmapData ? JSON.stringify(window.mindmapData) : null
-                };
-                
-                console.log('Saving note with data:', noteData);
-                
-                const saveResponse = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(noteData)
-                });
-                
-                if (!saveResponse.ok) throw new Error('Failed to save note');
-                const saveData = await saveResponse.json();
-                
-                if (saveData.id) {
-                    savedNoteId = saveData.id;
-                    
-                    // Store the ID in localStorage and sessionStorage for redundancy
-                    localStorage.setItem('lastCreatedNoteId', savedNoteId);
-                    sessionStorage.setItem('lastCreatedNoteId', savedNoteId);
-                    localStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
-                    sessionStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
-                    
-                    console.log('Saved note ID:', savedNoteId);
-                    
-                    // Update the form with the new note ID
-                    document.getElementById('note-id').value = savedNoteId;
-                    
-                    // Update form title
-                    const formTitle = document.getElementById('form-title');
-                    if (formTitle) formTitle.textContent = 'Edit Note';
-                    
-                    // Set global flag to stay in edit mode
-                    window.stayInEditMode = true;
-                    
-                    // Force edit mode immediately - this is critical
-                    setTimeout(() => {
-                        forceEditMode(savedNoteId);
-                    }, 100);
-                    
-                    // Update URL without refreshing
-                    if (window.history && window.history.pushState) {
-                        window.history.pushState(
-                            {noteId: savedNoteId}, 
-                            `Edit Note ${savedNoteId}`, 
-                            `?view=edit&id=${savedNoteId}`
-                        );
-                    }
+                // Update the note ID field if we're in edit mode
+                if (document.getElementById('note-id')) {
+                    document.getElementById('note-id').value = savedNote.id;
                 }
                 
-                showAlert('Note saved successfully!', 'success');
-            } catch (error) {
-                console.error('Error saving note:', error);
-                showAlert('Error saving note: ' + error.message, 'danger');
+                // Update the form title to indicate we're now editing
+                const formTitle = document.getElementById('form-title');
+                if (formTitle) {
+                    formTitle.textContent = 'Edit Note';
+                }
+                
+                // Show success message
+                showAlert('PDF content extracted and saved as a new note!', 'success');
+                
+                // Redirect to edit the newly created note
+                if (typeof window.editNote === 'function') {
+                    window.editNote(savedNote.id);
+                }
             }
-            
-            showAlert('Text extracted from PDF successfully.', 'success');
-        } else if (data.error) {
-            throw new Error(data.error);
-        } else {
-            throw new Error('No text could be extracted from the PDF.');
         }
-    } catch (error) {
-        console.error('Error processing PDF:', error);
-        showAlert('Error processing PDF: ' + error.message, 'danger');
-    } finally {
-        // Reset the file input to allow uploading the same file again
-        event.target.value = '';
         
         // Remove the overlay
         const overlay = document.getElementById('pdf-processing-overlay');
@@ -358,12 +321,17 @@ async function handlePdfUpload(event) {
         // Restore original submit
         HTMLFormElement.prototype.submit = originalSubmit;
         
-        // Reset processing state
+        // Reset the file input
+        event.target.value = '';
+        
+        // Clear the processing flag
         window.pdfProcessingInProgress = false;
+        
+        return false;
+    } catch (error) {
+        console.error('Error processing PDF:', error);
+        showAlert('Error processing PDF: ' + error.message, 'danger');
     }
-    
-    // Return false to prevent form submission
-    return false;
 }
 
 // Helper function to redirect to edit mode

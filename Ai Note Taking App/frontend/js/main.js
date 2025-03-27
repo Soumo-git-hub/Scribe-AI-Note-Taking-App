@@ -448,6 +448,14 @@ function resetForm() {
 }
 
 function editCurrentNote() {
+    if (!currentNote) {
+        console.error('No current note to edit');
+        showAlert('No note selected for editing', 'warning');
+        return;
+    }
+    
+    console.log('Editing current note:', currentNote);
+    
     elements.noteId.value = currentNote.id;
     elements.title.value = currentNote.title;
     elements.content.value = currentNote.content;
@@ -455,27 +463,35 @@ function editCurrentNote() {
 
     summaryData = currentNote.summary;
     if (summaryData) {
-        elements.summaryContent.textContent = summaryData;
+        elements.summaryContent.innerHTML = formatContent(summaryData);
+    } else {
+        elements.summaryContent.innerHTML = 'No summary generated yet.';
     }
 
     if (currentNote.quiz) {
         try {
-            quizData = JSON.parse(currentNote.quiz);
+            quizData = typeof currentNote.quiz === 'string' ? JSON.parse(currentNote.quiz) : currentNote.quiz;
             window.aiFeatures.renderQuiz(quizData, elements.quizContent);
         } catch (e) {
+            console.error('Error parsing quiz data:', e);
             quizData = null;
-            elements.quizContent.textContent = 'Error loading quiz data.';
+            elements.quizContent.innerHTML = 'Error loading quiz data.';
         }
+    } else {
+        elements.quizContent.innerHTML = 'No quiz generated yet.';
     }
 
     if (currentNote.mindmap) {
         try {
-            mindmapData = JSON.parse(currentNote.mindmap);
+            mindmapData = typeof currentNote.mindmap === 'string' ? JSON.parse(currentNote.mindmap) : currentNote.mindmap;
             window.aiFeatures.renderMindMap(mindmapData, elements.mindmapContent);
         } catch (e) {
+            console.error('Error parsing mindmap data:', e);
             mindmapData = null;
-            elements.mindmapContent.textContent = 'Error loading mind map data.';
+            elements.mindmapContent.innerHTML = 'Error loading mind map data.';
         }
+    } else {
+        elements.mindmapContent.innerHTML = 'No mind map generated yet.';
     }
 
     toggleViews('createEditView');
@@ -512,7 +528,6 @@ function formatContent(text) {
 }
 
 // Initialize the application
-// Add this to the DOMContentLoaded event listener
 document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners
     if (elements.navNotes) elements.navNotes.addEventListener('click', function(e) {
@@ -601,9 +616,12 @@ window.loadNotes = loadNotes;
 // Add a function to save PDF content without refreshing
 window.savePdfContent = async function(title, content) {
     try {
+        // Format the content as markdown if needed
+        const formattedContent = content;
+        
         const noteData = {
             title: title || 'Notes from PDF',
-            content: content,
+            content: formattedContent,
             summary: null,
             quiz: null,
             mindmap: null
@@ -623,11 +641,10 @@ window.savePdfContent = async function(title, content) {
         // Refresh the notes list without changing the view
         await loadNotesInBackground();
         
-        // Clear any stored note IDs from localStorage to prevent 404 errors
-        localStorage.removeItem('lastCreatedNoteId');
-        localStorage.removeItem('lastCreatedNoteTimestamp');
+        // Set flag to prevent navigation away from edit view
+        window.stayInEditMode = true;
         
-        // Return the note object instead of just the ID
+        // Return the complete note object
         return result;
     } catch (error) {
         console.error('Error saving PDF content:', error);
@@ -650,73 +667,83 @@ window.editNote = function(noteObj) {
         if (foundNote) {
             noteToEdit = foundNote;
         } else {
-            // Instead of fetching a potentially non-existent note, show an error and redirect
-            console.error('Note not found in local cache:', noteObj);
-            window.showAlert('Note not found or may have been deleted', 'warning');
-            
-            // Clear any stored references to this note
-            if (localStorage.getItem('lastCreatedNoteId') == noteObj) {
-                localStorage.removeItem('lastCreatedNoteId');
-                localStorage.removeItem('lastCreatedNoteTimestamp');
-            }
-            
-            // Redirect to notes view
-            showNotesView();
+            // Try to fetch the note from the server
+            fetch(`${API_URL}/api/notes/${noteObj}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Note not found');
+                    return response.json();
+                })
+                .then(note => {
+                    if (note) {
+                        // Populate the form with the fetched note
+                        populateNoteForm(note);
+                    } else {
+                        throw new Error('Note not found');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching note:', error);
+                    window.aiFeatures.showAlert('Note not found or may have been deleted', 'warning');
+                    
+                    // Clear any stored references to this note
+                    if (localStorage.getItem('lastCreatedNoteId') == noteObj) {
+                        localStorage.removeItem('lastCreatedNoteId');
+                        localStorage.removeItem('lastCreatedNoteTimestamp');
+                    }
+                    
+                    // Redirect to notes view
+                    showNotesView();
+                });
             return;
         }
     }
     
     // Now we have a note object, populate the form
-    elements.noteId.value = noteToEdit.id || '';
-    elements.title.value = noteToEdit.title || '';
-    elements.content.value = noteToEdit.content || '';
+    populateNoteForm(noteToEdit);
     
-    // Update form title
-    elements.formTitle.textContent = 'Edit Note';
-    
-    // Show the edit view
-    toggleViews('createEditView');
-    
-    // Load AI features if available
-    if (noteToEdit.summary) {
-        elements.summaryContent.innerHTML = `
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <i class="fas fa-robot me-2"></i> AI Summary
-                </div>
-                <div class="card-body">
-                    <p class="card-text">${noteToEdit.summary}</p>
-                </div>
-            </div>
-        `;
-        summaryData = noteToEdit.summary;
-    }
-    
-    if (noteToEdit.quiz) {
-        try {
-            const parsedQuizData = typeof noteToEdit.quiz === 'string' 
-                ? JSON.parse(noteToEdit.quiz) 
-                : noteToEdit.quiz;
-                
-            window.aiFeatures.renderQuiz(parsedQuizData, elements.quizContent);
-            quizData = parsedQuizData;
-        } catch (e) {
-            console.error('Error parsing quiz data:', e);
-            elements.quizContent.textContent = 'Error loading quiz data.';
+    function populateNoteForm(note) {
+        elements.noteId.value = note.id || '';
+        elements.title.value = note.title || '';
+        elements.content.value = note.content || '';
+        
+        // Update form title
+        elements.formTitle.textContent = 'Edit Note';
+        
+        // Show the edit view
+        toggleViews('createEditView');
+        
+        // Load AI features if available
+        if (note.summary) {
+            elements.summaryContent.innerHTML = formatContent(note.summary);
+            summaryData = note.summary;
         }
-    }
-    
-    if (noteToEdit.mindmap) {
-        try {
-            const parsedMindmapData = typeof noteToEdit.mindmap === 'string' 
-                ? JSON.parse(noteToEdit.mindmap) 
-                : noteToEdit.mindmap;
-                
-            window.aiFeatures.renderMindMap(parsedMindmapData, elements.mindmapContent);
-            mindmapData = parsedMindmapData;
-        } catch (e) {
-            console.error('Error parsing mindmap data:', e);
-            elements.mindmapContent.textContent = 'Error loading mind map data.';
+        
+        if (note.quiz) {
+            try {
+                const parsedQuizData = typeof note.quiz === 'string' 
+                    ? JSON.parse(note.quiz) 
+                    : note.quiz;
+                    
+                window.aiFeatures.renderQuiz(parsedQuizData, elements.quizContent);
+                quizData = parsedQuizData;
+            } catch (e) {
+                console.error('Error parsing quiz data:', e);
+                elements.quizContent.textContent = 'Error loading quiz data.';
+            }
+        }
+        
+        if (note.mindmap) {
+            try {
+                const parsedMindmapData = typeof note.mindmap === 'string' 
+                    ? JSON.parse(note.mindmap) 
+                    : note.mindmap;
+                    
+                window.aiFeatures.renderMindMap(parsedMindmapData, elements.mindmapContent);
+                mindmapData = parsedMindmapData;
+            } catch (e) {
+                console.error('Error parsing mindmap data:', e);
+                elements.mindmapContent.textContent = 'Error loading mindmap data.';
+            }
         }
     }
 };
@@ -828,4 +855,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elements.content) {
         setupMarkdownPreview();
     }
+});
+
+// Add this to your document ready function or at the end of your JS file
+
+// Set the user name in the navbar
+function updateUserProfile() {
+    const userData = JSON.parse(localStorage.getItem('user'));
+    if (userData && userData.name) {
+        document.getElementById('user-name').textContent = userData.name;
+    }
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Your existing code...
+    
+    // Update user profile
+    updateUserProfile();
+    
+    // Add event listener for logout button
+    document.getElementById('logout-button').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Clear user data from localStorage
+        localStorage.removeItem('user');
+        
+        // Redirect to login page
+        window.location.href = 'login.html';
+    });
+    
+    // For now, just show an alert for the settings option
+    document.getElementById('profile-settings').addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('Settings functionality will be implemented in a future update.');
+    });
 });

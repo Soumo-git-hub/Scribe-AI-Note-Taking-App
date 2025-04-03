@@ -67,3 +67,246 @@
 2025-03-15 17:55:50,241 - api_test - INFO - Model is available!
 2025-03-15 17:55:50,243 - api_test - INFO - Testing API request for task: summarize
 2025-03-15 17:55:50,243 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:16,935 - api_test - INFO - === Starting API Tests ===
+2025-03-28 10:45:16,937 - api_test - INFO - API Key present: True
+2025-03-28 10:45:16,937 - api_test - INFO - API Key length: 37
+2025-03-28 10:45:16,938 - api_test - INFO - 
+--- Testing current model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:45:16,939 - api_test - INFO - Testing model availability: mistralai/Mistral-7B-Instruct-v0.3
+2025-03-28 10:45:17,911 - api_test - INFO - Model check response status: 200
+2025-03-28 10:45:17,912 - api_test - INFO - Model is available!
+2025-03-28 10:45:17,916 - api_test - INFO - 
+--- Testing task: summarize with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:45:17,917 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:45:17,918 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:18,668 - api_test - INFO - Request completed in 0.75 seconds
+2025-03-28 10:45:18,669 - api_test - INFO - Response status: 401
+2025-03-28 10:45:18,670 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:18,671 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:18,674 - api_test - INFO - 
+--- Testing task: quiz with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:45:18,675 - api_test - INFO - Testing API request for task: quiz
+2025-03-28 10:45:18,675 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:19,428 - api_test - INFO - Request completed in 0.75 seconds
+2025-03-28 10:45:19,430 - api_test - INFO - Response status: 401
+2025-03-28 10:45:19,430 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:19,431 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:19,434 - api_test - INFO - 
+--- Testing task: mindmap with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:45:19,440 - api_test - INFO - Testing API request for task: mindmap
+2025-03-28 10:45:19,441 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:20,181 - api_test - INFO - Request completed in 0.74 seconds
+2025-03-28 10:45:20,182 - api_test - INFO - Response status: 401
+2025-03-28 10:45:20,182 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:20,183 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:20,187 - api_test - INFO - Testing alternative models...
+2025-03-28 10:45:20,187 - api_test - INFO - 
+--- Testing model: google/flan-t5-base ---
+2025-03-28 10:45:20,188 - api_test - INFO - Testing model availability: google/flan-t5-base
+2025-03-28 10:45:20,959 - api_test - INFO - Model check response status: 200
+2025-03-28 10:45:20,961 - api_test - INFO - Model is available!
+2025-03-28 10:45:20,965 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:45:20,968 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:21,720 - api_test - INFO - Request completed in 0.75 seconds
+2025-03-28 10:45:21,721 - api_test - INFO - Response status: 401
+2025-03-28 10:45:21,722 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:21,723 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:21,726 - api_test - INFO - --- Finished testing: google/flan-t5-base ---
+
+2025-03-28 10:45:21,726 - api_test - INFO - 
+--- Testing model: facebook/bart-large-cnn ---
+2025-03-28 10:45:21,727 - api_test - INFO - Testing model availability: facebook/bart-large-cnn
+2025-03-28 10:45:22,063 - api_test - INFO - Model check response status: 200
+2025-03-28 10:45:22,064 - api_test - INFO - Model is available!
+2025-03-28 10:45:22,067 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:45:22,068 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:22,889 - api_test - INFO - Request completed in 0.82 seconds
+2025-03-28 10:45:22,891 - api_test - INFO - Response status: 401
+2025-03-28 10:45:22,892 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:22,893 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:22,895 - api_test - INFO - --- Finished testing: facebook/bart-large-cnn ---
+
+2025-03-28 10:45:22,896 - api_test - INFO - 
+--- Testing model: gpt2 ---
+2025-03-28 10:45:22,896 - api_test - INFO - Testing model availability: gpt2
+2025-03-28 10:45:23,686 - api_test - INFO - Model check response status: 200
+2025-03-28 10:45:23,687 - api_test - INFO - Model is available!
+2025-03-28 10:45:23,691 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:45:23,692 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:24,450 - api_test - INFO - Request completed in 0.76 seconds
+2025-03-28 10:45:24,450 - api_test - INFO - Response status: 401
+2025-03-28 10:45:24,451 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:24,451 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:24,453 - api_test - INFO - --- Finished testing: gpt2 ---
+
+2025-03-28 10:45:24,454 - api_test - INFO - 
+--- Testing model: distilbert-base-uncased ---
+2025-03-28 10:45:24,454 - api_test - INFO - Testing model availability: distilbert-base-uncased
+2025-03-28 10:45:24,771 - api_test - INFO - Model check response status: 200
+2025-03-28 10:45:24,773 - api_test - INFO - Model is available!
+2025-03-28 10:45:24,776 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:45:24,777 - api_test - INFO - Sending test request to API...
+2025-03-28 10:45:25,527 - api_test - INFO - Request completed in 0.75 seconds
+2025-03-28 10:45:25,528 - api_test - INFO - Response status: 401
+2025-03-28 10:45:25,528 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:45:25,529 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:45:25,531 - api_test - INFO - --- Finished testing: distilbert-base-uncased ---
+
+2025-03-28 10:45:25,531 - api_test - INFO - === API Tests Completed ===
+2025-03-28 10:48:26,553 - api_test - INFO - === Starting API Tests ===
+2025-03-28 10:48:26,573 - api_test - INFO - API Key present: True
+2025-03-28 10:48:26,590 - api_test - INFO - API Key length: 37
+2025-03-28 10:48:26,599 - api_test - INFO - 
+--- Testing current model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:48:26,618 - api_test - INFO - Testing model availability: mistralai/Mistral-7B-Instruct-v0.3
+2025-03-28 10:48:27,620 - api_test - INFO - Model check response status: 200
+2025-03-28 10:48:27,634 - api_test - INFO - Model is available!
+2025-03-28 10:48:27,646 - api_test - INFO - 
+--- Testing task: summarize with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:48:27,655 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:48:27,659 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:28,430 - api_test - INFO - Request completed in 0.76 seconds
+2025-03-28 10:48:28,430 - api_test - INFO - Response status: 401
+2025-03-28 10:48:28,431 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:28,431 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:28,434 - api_test - INFO - 
+--- Testing task: quiz with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:48:28,434 - api_test - INFO - Testing API request for task: quiz
+2025-03-28 10:48:28,434 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:29,275 - api_test - INFO - Request completed in 0.84 seconds
+2025-03-28 10:48:29,275 - api_test - INFO - Response status: 401
+2025-03-28 10:48:29,276 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:29,276 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:29,279 - api_test - INFO - 
+--- Testing task: mindmap with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:48:29,281 - api_test - INFO - Testing API request for task: mindmap
+2025-03-28 10:48:29,282 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:29,678 - api_test - INFO - Request completed in 0.40 seconds
+2025-03-28 10:48:29,678 - api_test - INFO - Response status: 401
+2025-03-28 10:48:29,679 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:29,679 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:29,681 - api_test - INFO - Testing alternative models...
+2025-03-28 10:48:29,682 - api_test - INFO - 
+--- Testing model: google/flan-t5-base ---
+2025-03-28 10:48:29,682 - api_test - INFO - Testing model availability: google/flan-t5-base
+2025-03-28 10:48:30,626 - api_test - INFO - Model check response status: 200
+2025-03-28 10:48:30,626 - api_test - INFO - Model is available!
+2025-03-28 10:48:30,628 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:48:30,629 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:31,429 - api_test - INFO - Request completed in 0.80 seconds
+2025-03-28 10:48:31,429 - api_test - INFO - Response status: 401
+2025-03-28 10:48:31,430 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:31,430 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:31,432 - api_test - INFO - --- Finished testing: google/flan-t5-base ---
+
+2025-03-28 10:48:31,434 - api_test - INFO - 
+--- Testing model: facebook/bart-large-cnn ---
+2025-03-28 10:48:31,434 - api_test - INFO - Testing model availability: facebook/bart-large-cnn
+2025-03-28 10:48:32,202 - api_test - INFO - Model check response status: 200
+2025-03-28 10:48:32,202 - api_test - INFO - Model is available!
+2025-03-28 10:48:32,204 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:48:32,204 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:32,991 - api_test - INFO - Request completed in 0.79 seconds
+2025-03-28 10:48:32,991 - api_test - INFO - Response status: 401
+2025-03-28 10:48:32,992 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:32,992 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:32,994 - api_test - INFO - --- Finished testing: facebook/bart-large-cnn ---
+
+2025-03-28 10:48:32,995 - api_test - INFO - 
+--- Testing model: gpt2 ---
+2025-03-28 10:48:32,996 - api_test - INFO - Testing model availability: gpt2
+2025-03-28 10:48:33,747 - api_test - INFO - Model check response status: 200
+2025-03-28 10:48:33,747 - api_test - INFO - Model is available!
+2025-03-28 10:48:33,751 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:48:33,751 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:34,493 - api_test - INFO - Request completed in 0.74 seconds
+2025-03-28 10:48:34,493 - api_test - INFO - Response status: 401
+2025-03-28 10:48:34,493 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:34,493 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:34,496 - api_test - INFO - --- Finished testing: gpt2 ---
+
+2025-03-28 10:48:34,497 - api_test - INFO - 
+--- Testing model: distilbert-base-uncased ---
+2025-03-28 10:48:34,497 - api_test - INFO - Testing model availability: distilbert-base-uncased
+2025-03-28 10:48:35,271 - api_test - INFO - Model check response status: 200
+2025-03-28 10:48:35,271 - api_test - INFO - Model is available!
+2025-03-28 10:48:35,273 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:48:35,273 - api_test - INFO - Sending test request to API...
+2025-03-28 10:48:36,063 - api_test - INFO - Request completed in 0.79 seconds
+2025-03-28 10:48:36,063 - api_test - INFO - Response status: 401
+2025-03-28 10:48:36,064 - api_test - ERROR - API request failed with status 401
+2025-03-28 10:48:36,064 - api_test - ERROR - Response: {"error":"Invalid credentials in Authorization header"}
+2025-03-28 10:48:36,066 - api_test - INFO - --- Finished testing: distilbert-base-uncased ---
+
+2025-03-28 10:48:36,067 - api_test - INFO - === API Tests Completed ===
+2025-03-28 10:53:59,341 - api_test - INFO - === Starting API Tests ===
+2025-03-28 10:53:59,341 - api_test - INFO - API Key present: True
+2025-03-28 10:53:59,342 - api_test - INFO - API Key length: 37
+2025-03-28 10:53:59,342 - api_test - INFO - 
+--- Testing current model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:53:59,342 - api_test - INFO - Testing model availability: mistralai/Mistral-7B-Instruct-v0.3
+2025-03-28 10:54:00,281 - api_test - INFO - Model check response status: 200
+2025-03-28 10:54:00,283 - api_test - INFO - Model is available!
+2025-03-28 10:54:00,286 - api_test - INFO - 
+--- Testing task: summarize with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:54:00,294 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:54:00,295 - api_test - INFO - Sending test request to API...
+2025-03-28 10:54:03,718 - api_test - INFO - Request completed in 3.42 seconds
+2025-03-28 10:54:03,718 - api_test - INFO - Response status: 200
+2025-03-28 10:54:03,719 - api_test - INFO - API request successful!
+2025-03-28 10:54:03,719 - api_test - INFO - Response type: <class 'list'>
+2025-03-28 10:54:03,720 - api_test - INFO - Response preview: [{'generated_text': "Summarize the following text: This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog. This is a test text for the API.\n\nThe t...
+2025-03-28 10:54:03,721 - api_test - INFO - 
+--- Testing task: quiz with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:54:03,722 - api_test - INFO - Testing API request for task: quiz
+2025-03-28 10:54:03,722 - api_test - INFO - Sending test request to API...
+2025-03-28 10:54:08,381 - api_test - INFO - Request completed in 4.66 seconds
+2025-03-28 10:54:08,381 - api_test - INFO - Response status: 200
+2025-03-28 10:54:08,382 - api_test - INFO - API request successful!
+2025-03-28 10:54:08,382 - api_test - INFO - Response type: <class 'list'>
+2025-03-28 10:54:08,382 - api_test - INFO - Response preview: [{'generated_text': "Create a quiz based on this text: This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog.\n\n1. What is the purpose of this tex...
+2025-03-28 10:54:08,384 - api_test - INFO - 
+--- Testing task: mindmap with model: mistralai/Mistral-7B-Instruct-v0.3 ---
+2025-03-28 10:54:08,385 - api_test - INFO - Testing API request for task: mindmap
+2025-03-28 10:54:08,385 - api_test - INFO - Sending test request to API...
+2025-03-28 10:54:12,274 - api_test - INFO - Request completed in 3.89 seconds
+2025-03-28 10:54:12,275 - api_test - INFO - Response status: 200
+2025-03-28 10:54:12,276 - api_test - INFO - API request successful!
+2025-03-28 10:54:12,277 - api_test - INFO - Response type: <class 'list'>
+2025-03-28 10:54:12,277 - api_test - INFO - Response preview: [{'generated_text': 'Create a mind map for this text: This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog. The sun sets in the west. The cat is c...
+2025-03-28 10:54:12,279 - api_test - INFO - Testing alternative models...
+2025-03-28 10:54:12,279 - api_test - INFO - 
+--- Testing model: google/flan-t5-base ---
+2025-03-28 10:54:12,279 - api_test - INFO - Testing model availability: google/flan-t5-base
+2025-03-28 10:54:12,600 - api_test - INFO - Model check response status: 200
+2025-03-28 10:54:12,600 - api_test - INFO - Model is available!
+2025-03-28 10:54:12,603 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:54:12,603 - api_test - INFO - Sending test request to API...
+2025-03-28 10:54:13,763 - api_test - INFO - Request completed in 1.16 seconds
+2025-03-28 10:54:13,763 - api_test - INFO - Response status: 200
+2025-03-28 10:54:13,764 - api_test - INFO - API request successful!
+2025-03-28 10:54:13,764 - api_test - INFO - Response type: <class 'list'>
+2025-03-28 10:54:13,764 - api_test - INFO - Response preview: [{'generated_text': 'The fox jumps over the lazy dog.'}]...
+2025-03-28 10:54:13,766 - api_test - INFO - --- Finished testing: google/flan-t5-base ---
+
+2025-03-28 10:54:13,767 - api_test - INFO - 
+--- Testing model: facebook/bart-large-cnn ---
+2025-03-28 10:54:13,767 - api_test - INFO - Testing model availability: facebook/bart-large-cnn
+2025-03-28 10:54:14,525 - api_test - INFO - Model check response status: 200
+2025-03-28 10:54:14,526 - api_test - INFO - Model is available!
+2025-03-28 10:54:14,528 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:54:14,529 - api_test - INFO - Sending test request to API...
+2025-03-28 10:54:18,568 - api_test - INFO - Request completed in 4.04 seconds
+2025-03-28 10:54:18,569 - api_test - INFO - Response status: 200
+2025-03-28 10:54:18,569 - api_test - INFO - API request successful!
+2025-03-28 10:54:18,570 - api_test - INFO - Response type: <class 'list'>
+2025-03-28 10:54:18,570 - api_test - INFO - Response preview: [{'summary_text': "This is a test input to check if the API is working correctly. The quick brown fox jumps over the lazy dog. Summarize the following text: This is atest input toCheck if theAPI is wo...
+2025-03-28 10:54:18,572 - api_test - INFO - --- Finished testing: facebook/bart-large-cnn ---
+
+2025-03-28 10:54:18,573 - api_test - INFO - 
+--- Testing model: gpt2 ---
+2025-03-28 10:54:18,573 - api_test - INFO - Testing model availability: gpt2
+2025-03-28 10:54:19,351 - api_test - INFO - Model check response status: 200
+2025-03-28 10:54:19,351 - api_test - INFO - Model is available!
+2025-03-28 10:54:19,355 - api_test - INFO - Testing API request for task: summarize
+2025-03-28 10:54:19,355 - api_test - INFO - Sending test request to API...

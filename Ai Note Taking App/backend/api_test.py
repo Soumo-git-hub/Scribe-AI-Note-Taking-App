@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger("api_test")
 
 # Use a placeholder instead of the actual API key
-API_KEY = "YOUR_API_KEY_HERE"  # Replace with your key when running locally
+API_KEY = "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"  # Replace with your key when running locally
 
 def test_api_key():
     """Test if the API key is present and valid"""
@@ -66,7 +66,8 @@ def test_model_availability(model_name):
 
 def test_api_request(model_name, task_type="summarize"):
     """Test a simple API request to the model"""
-    api_key = os.getenv("HUGGINGFACE_API_KEY", "")
+    # Use the same API_KEY variable that's used in other functions
+    api_key = API_KEY
     api_url = f"https://api-inference.huggingface.co/models/{model_name}"
     
     logger.info(f"Testing API request for task: {task_type}")

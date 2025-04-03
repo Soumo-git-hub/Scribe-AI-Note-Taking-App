@@ -1,10 +1,12 @@
 // PDF Upload and Processing Handler
-const PDF_API_URL = window.location.protocol + '//' + window.location.hostname + ':8000';
+const PDF_API_URL = location.protocol === 'file:' 
+    ? 'http://localhost:8001' 
+    : `${window.location.protocol}//${window.location.hostname}:8001`;
 
 // Global flag to track PDF processing
 window.pdfProcessingInProgress = false;
 
-// Add this at the end of the DOMContentLoaded event handler
+// Initialize PDF handler
 document.addEventListener('DOMContentLoaded', function() {
     const uploadHandwritingBtn = document.getElementById('upload-handwriting-btn');
     const handwritingInput = document.getElementById('handwriting-input');
@@ -13,47 +15,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update button text to be more specific
         uploadHandwritingBtn.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> Upload PDF';
         
-        // Find the form that contains the button
+        // Find the form that contains the button to prevent form submission
         const form = uploadHandwritingBtn.closest('form');
         if (form) {
-            // Prevent form submission when PDF button is clicked
-            uploadHandwritingBtn.type = 'button';
-            
-            // Completely override the form's submit event to prevent any refreshes
-            const originalSubmit = form.onsubmit;
-            form.onsubmit = function(e) {
-                if (window.pdfProcessingInProgress) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-                
-                // If we're not processing a PDF, use the original submit handler
-                if (typeof originalSubmit === 'function') {
-                    return originalSubmit.call(this, e);
-                }
-            };
-            
-            // Also intercept the form's action to prevent navigation
+            // Prevent form submission during PDF processing
             form.addEventListener('submit', function(e) {
                 if (window.pdfProcessingInProgress) {
                     e.preventDefault();
-                    e.stopPropagation();
+                    console.log('Prevented form submission during PDF processing');
                     return false;
-                }
-            }, true);
-            
-            // Completely override the form's action attribute to prevent navigation
-            const originalAction = form.action;
-            Object.defineProperty(form, 'action', {
-                get: function() {
-                    return window.pdfProcessingInProgress ? 'javascript:void(0);' : originalAction;
-                },
-                set: function() {
-                    // Ignore attempts to set the action while processing
-                    if (!window.pdfProcessingInProgress) {
-                        originalAction = value;
-                    }
                 }
             });
         }
@@ -61,21 +31,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle PDF button click
         uploadHandwritingBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
+            e.stopPropagation(); // Stop event propagation
             handwritingInput.click();
-            return false;
+            return false; // Prevent default behavior
         });
         
         // Handle file selection
         handwritingInput.addEventListener('change', function(event) {
             event.preventDefault();
-            event.stopPropagation();
+            event.stopPropagation(); // Stop event propagation
             handlePdfUpload(event);
-            return false;
+            return false; // Prevent default behavior
         });
     }
     
-    // Add a custom loader style if not already present
+    // Add custom loader style
     if (!document.getElementById('pdf-loader-style')) {
         const style = document.createElement('style');
         style.id = 'pdf-loader-style';
@@ -119,77 +89,35 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(style);
     }
     
-    // Disable the beforeunload event to prevent reload popups
-    window.addEventListener('beforeunload', function(e) {
-        if (window.pdfProcessingInProgress) {
-            // Just log a message, don't set returnValue
-            console.log('PDF processing in progress');
-            // Don't return anything to prevent the popup
-        }
-    }, {capture: true});
-    
-    console.log('PDF Handler initialized with enhanced refresh prevention');
+    console.log('PDF Handler initialized');
 });
 
-// In the handlePdfUpload function, let's modify the file size handling
-
-// Modify the handlePdfUpload function
+// Improved PDF upload handler
 async function handlePdfUpload(event) {
-    // Set processing flag
-    window.pdfProcessingInProgress = true;
-    
-    // Prevent default behavior more aggressively
+    // Make sure we don't refresh the page
     if (event) {
         event.preventDefault();
         event.stopPropagation();
-        event.stopImmediatePropagation();
     }
     
-    // Get the file only once
+    // Set processing flag
+    window.pdfProcessingInProgress = true;
+    
+    // Get the file
     const file = event.target.files[0];
     if (!file) {
         window.pdfProcessingInProgress = false;
-        return false;
+        return;
     }
-    
-    // Disable all form elements to prevent interaction during processing
-    const form = document.querySelector('form');
-    if (form) {
-        const formElements = form.elements;
-        for (let i = 0; i < formElements.length; i++) {
-            if (formElements[i].type !== 'file') {
-                formElements[i].disabled = true;
-            }
-        }
-    }
-    
-    // Prevent any form submissions during PDF processing
-    const originalSubmit = HTMLFormElement.prototype.submit;
-    HTMLFormElement.prototype.submit = function() {
-        if (window.pdfProcessingInProgress) {
-            console.log('Form submission prevented during PDF processing');
-            return false;
-        }
-        return originalSubmit.apply(this, arguments);
-    };
     
     // Check if file is PDF
     if (!file.type.includes('pdf')) {
         showAlert('Please upload a PDF file', 'warning');
         window.pdfProcessingInProgress = false;
-        // Re-enable form elements
-        if (form) {
-            const formElements = form.elements;
-            for (let i = 0; i < formElements.length; i++) {
-                formElements[i].disabled = false;
-            }
-        }
-        // Restore original submit
-        HTMLFormElement.prototype.submit = originalSubmit;
-        return false;
+        return;
     }
     
-    // Increase max file size to handle larger PDFs - 50MB should be sufficient
+    // Check file size - 50MB limit
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
         showAlert(`File is too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 50MB.`, 'warning');
@@ -199,343 +127,285 @@ async function handlePdfUpload(event) {
     
     console.log(`Processing PDF file: ${file.name} (${file.size} bytes)`);
     
-    // Get the content textarea
-    const contentArea = document.getElementById('content');
-    const titleInput = document.getElementById('title');
-    const originalContent = contentArea.value;
-    
-    // Always show the overlay for PDF processing regardless of size
-    // This gives user feedback that something is happening
+    // Show processing overlay
     const overlay = document.createElement('div');
     overlay.className = 'pdf-processing-overlay';
-    overlay.id = 'pdf-processing-overlay';
     overlay.innerHTML = `
         <div class="pdf-processing-spinner"></div>
         <div class="pdf-processing-message">
-            <strong>Extracting text from PDF...</strong><br>
-            Please wait while we process your file. Larger PDFs may take longer.
+            Processing PDF file...<br>
+            This may take a few moments.
         </div>
     `;
     document.body.appendChild(overlay);
     
     try {
-        // Use the handwriting endpoint which can handle PDFs
-        const endpoint = `${PDF_API_URL}/api/handwriting`;
-        console.log('Processing PDF file using:', endpoint);
-
+        // Create form data for the API
         const formData = new FormData();
         formData.append('file', file);
 
-        // Set a longer timeout for larger files
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
-
-        const response = await fetch(endpoint, {
+        // First try the upload-pdf endpoint
+        let response;
+        let result;
+        let usedEndpoint = '/api/upload-pdf';
+        
+        try {
+            console.log('Sending PDF to upload-pdf endpoint');
+            console.log('PDF API URL:', `${PDF_API_URL}/api/upload-pdf`);
+            response = await fetch(`${PDF_API_URL}/api/upload-pdf`, {
             method: 'POST',
-            body: formData,
-            signal: controller.signal
+                body: formData
         });
         
-        clearTimeout(timeoutId);
+            console.log('Upload response status:', response.status);
         
         if (!response.ok) {
-            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to process PDF');
-        }
-        
-        // Get the extracted text
-        const extractedText = result.text;
-        const suggestedTitle = result.title || 'Notes from PDF';
-        
-        if (!extractedText || extractedText.trim().length === 0) {
-            throw new Error('No text could be extracted from the PDF');
-        }
-        
-        console.log(`Successfully extracted ${extractedText.length} characters from PDF`);
-        
-        // Update the content area with the extracted text
-        if (contentArea) {
-            // Format the extracted text as markdown
-            contentArea.value = extractedText;
-            
-            // Update the title if it's empty
-            if (titleInput && (!titleInput.value || titleInput.value.trim() === '')) {
-                titleInput.value = suggestedTitle;
+                const errorText = await response.text();
+                console.log(`Primary endpoint failed with status ${response.status}: ${errorText}`);
+                throw new Error('Primary endpoint failed');
             }
             
-            // Important: Save the note immediately to prevent loss of data
-            // But don't navigate away from the page
-            window.stayInEditMode = true;
+            result = await response.json();
+            console.log('Successfully processed PDF with upload-pdf endpoint');
+        } catch (primaryError) {
+            // If upload-pdf fails, try the handwriting endpoint as fallback
+            console.log('Trying fallback endpoint /api/handwriting', primaryError);
+            console.log('Error details:', primaryError.message);
+            usedEndpoint = '/api/handwriting';
             
-            // Create a new note with the extracted content
-            const savedNote = await window.savePdfContent(
-                titleInput ? titleInput.value : suggestedTitle,
-                extractedText
-            );
+            // Create a new FormData since the previous one might have been consumed
+            const fallbackFormData = new FormData();
+            fallbackFormData.append('file', file);
             
-            if (savedNote && savedNote.id) {
-                // Store the ID for later use
-                localStorage.setItem('lastCreatedNoteId', savedNote.id);
-                localStorage.setItem('lastCreatedNoteTimestamp', Date.now());
-                
-                // Update the note ID field if we're in edit mode
-                if (document.getElementById('note-id')) {
-                    document.getElementById('note-id').value = savedNote.id;
-                }
-                
-                // Update the form title to indicate we're now editing
-                const formTitle = document.getElementById('form-title');
-                if (formTitle) {
-                    formTitle.textContent = 'Edit Note';
-                }
-                
-                // Show success message
-                showAlert('PDF content extracted and saved as a new note!', 'success');
-                
-                // Redirect to edit the newly created note
-                if (typeof window.editNote === 'function') {
-                    window.editNote(savedNote.id);
-                }
+            console.log('Sending PDF to fallback endpoint:', `${PDF_API_URL}/api/handwriting`);
+            response = await fetch(`${PDF_API_URL}/api/handwriting`, {
+                method: 'POST',
+                body: fallbackFormData
+            });
+            
+            console.log('Fallback response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(errorData.detail || `Server returned ${response.status}: ${response.statusText}`);
             }
+            
+            result = await response.json();
+            console.log('Successfully processed PDF with handwriting endpoint');
         }
         
-        // Remove the overlay
-        const overlay = document.getElementById('pdf-processing-overlay');
-        if (overlay) {
-            overlay.remove();
+        // Get references to the content and title fields
+        const contentField = document.getElementById('content');
+        const titleField = document.getElementById('title');
+        
+        // Check if we received valid results
+        if (!result || !result.text) {
+            throw new Error('No text extracted from PDF');
         }
         
-        // Re-enable form elements
-        if (form) {
-            const formElements = form.elements;
-            for (let i = 0; i < formElements.length; i++) {
-                formElements[i].disabled = false;
+        console.log(`Extracted ${result.text.length} characters of text from PDF`);
+        
+        // Set the extracted text in the content field
+        if (contentField) {
+            contentField.value = result.text;
+            console.log('Updated content field with extracted text');
+            
+            // If there's a title suggestion and the title field is empty, use the suggestion
+            if (titleField && (!titleField.value || titleField.value.trim() === '') && result.title) {
+                titleField.value = result.title;
+                console.log('Updated title field with suggested title');
             }
+            
+            const pageCount = result.pages || 'unknown number of';
+            showAlert(`PDF processed successfully using ${usedEndpoint}. Extracted ${result.text.length} characters from ${pageCount} page(s).`, 'success');
+            
+            // Attempt to auto-save the content
+            console.log('Attempting to auto-save PDF content');
+            setTimeout(() => {
+                try {
+                    // Set auto-save flag to bypass PDF processing check
+                    window.pdfAutoSave = true;
+                    
+                    // Try to use the direct save function first
+                    if (window.saveCurrentContent) {
+                        console.log('Using saveCurrentContent function for direct save');
+                        window.saveCurrentContent()
+                            .then(result => {
+                                console.log('Direct save completed:', result);
+                                // Reset auto-save flag
+                                window.pdfAutoSave = false;
+                            })
+                            .catch(error => {
+                                console.error('Direct save failed:', error);
+                                // Try the fallback methods
+                                tryFallbackSave();
+                            });
+                    } else {
+                        // If direct save function not available, try fallback methods
+                        tryFallbackSave();
+                    }
+                    
+                    function tryFallbackSave() {
+                        // Try to get the save button
+                        const saveBtn = document.getElementById('save-btn');
+                        if (saveBtn) {
+                            console.log('Found save button, triggering click');
+                            saveBtn.click();
+                        } else {
+                            console.log('Save button not found, looking for form');
+                            // Try to get and submit the form
+                            const form = document.getElementById('note-form');
+                            if (form) {
+                                console.log('Found form, triggering submit event');
+                                // Create and dispatch a submit event
+                                const submitEvent = new Event('submit', {
+                                    bubbles: true,
+                                    cancelable: true
+                                });
+                                
+                                // Submit the form
+                                form.dispatchEvent(submitEvent);
+                            } else {
+                                console.error('Note form not found, cannot auto-save');
+                                window.pdfAutoSave = false;
+                            }
+                        }
+                    }
+                    
+                    // Reset the auto-save flag after a short delay as backup
+                    setTimeout(() => {
+                        window.pdfAutoSave = false;
+                    }, 3000);
+                } catch (e) {
+                    console.error('Error during auto-save attempt:', e);
+                    window.pdfAutoSave = false;
+                }
+            }, 500); // Short delay to ensure everything is ready
+        } else {
+            console.error('Content field not found in the DOM');
+            showAlert('PDF processed but could not update content field.', 'warning');
         }
-        
-        // Restore original submit
-        HTMLFormElement.prototype.submit = originalSubmit;
-        
-        // Reset the file input
-        event.target.value = '';
-        
-        // Clear the processing flag
-        window.pdfProcessingInProgress = false;
-        
-        return false;
     } catch (error) {
         console.error('Error processing PDF:', error);
-        showAlert('Error processing PDF: ' + error.message, 'danger');
-    }
-}
-
-// Helper function to redirect to edit mode
-function redirectToEditMode(noteId) {
-    if (!noteId) return;
-    
-    // Clear the storage to prevent infinite redirects
-    localStorage.removeItem('lastCreatedNoteId');
-    sessionStorage.removeItem('lastCreatedNoteId');
-    
-    console.log('Redirecting to edit mode for note:', noteId);
-    
-    // Try multiple approaches to open the note
-    
-    // 1. Try using the editNote function if available
-    if (typeof window.editNote === 'function') {
-        console.log('Using editNote function');
-        window.editNote(noteId);
-        return;
-    }
-    
-    // 2. Try clicking the edit button if it exists
-    const editBtn = document.querySelector(`[data-note-id="${noteId}"]`);
-    if (editBtn) {
-        console.log('Found edit button, clicking it');
-        editBtn.click();
-        return;
-    }
-    
-    // 3. Try manual navigation
-    console.log('Using manual navigation');
-    
-    // Update URL and navigate
-    window.location.href = `?view=edit&id=${noteId}`;
-}
-
-// Add the editNote function to the window object if it doesn't exist
-if (typeof window.editNote !== 'function') {
-    window.editNote = function(noteId) {
-        if (!noteId) return;
+        showAlert(`Error processing PDF: ${error.message}`, 'danger');
+    } finally {
+        // Remove overlay
+        if (document.body.contains(overlay)) {
+            document.body.removeChild(overlay);
+        }
         
-        console.log('Opening note for editing:', noteId);
+        // Reset the file input to allow selecting the same file again
+        if (event.target) {
+            event.target.value = '';
+        }
         
-        // Fetch the note data
-        fetch(`${PDF_API_URL}/api/notes/${noteId}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to fetch note');
-                return response.json();
-            })
-            .then(note => {
-                // Populate the form
-                document.getElementById('note-id').value = note.id;
-                document.getElementById('title').value = note.title;
-                document.getElementById('content').value = note.content;
-                
-                // Update form title
-                const formTitle = document.getElementById('form-title');
-                if (formTitle) formTitle.textContent = 'Edit Note';
-                
-                // Show the edit view
-                if (typeof window.toggleViews === 'function') {
-                    window.toggleViews('createEditView');
-                } else {
-                    // Manual toggle if function not available
-                    const views = ['notesListView', 'createEditView', 'noteDetailView'];
-                    views.forEach(view => {
-                        const element = document.getElementById(view);
-                        if (element) {
-                            element.style.display = view === 'createEditView' ? 'block' : 'none';
-                        }
-                    });
-                }
-                
-                // Load AI features if available
-                if (note.summary) {
-                    const summaryContent = document.getElementById('summary-content');
-                    if (summaryContent) {
-                        summaryContent.innerHTML = note.summary;
-                    }
-                    window.summaryData = note.summary;
-                }
-                
-                if (note.quiz) {
-                    try {
-                        window.quizData = JSON.parse(note.quiz);
-                    } catch (e) {
-                        console.error('Error parsing quiz data:', e);
-                    }
-                }
-                
-                if (note.mindmap) {
-                    try {
-                        window.mindmapData = JSON.parse(note.mindmap);
-                    } catch (e) {
-                        console.error('Error parsing mindmap data:', e);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching note:', error);
-                showAlert('Error fetching note: ' + error.message, 'danger');
-            });
-    };
+        // Clear the processing flag
+        setTimeout(() => {
+            // Delay clearing the flag to ensure the auto-save has time to complete
+        window.pdfProcessingInProgress = false;
+            window.pdfAutoSave = false;
+            console.log('PDF processing flags reset');
+        }, 2000);
+        
+        console.log('PDF processing completed');
+    }
+    
+    // Return false to prevent form submission
+    return false;
 }
 
 // Helper function to show alerts
 function showAlert(message, type = 'info', autoDismiss = true, id = null) {
-    // Use the global alert function if available
-    if (window.aiFeatures && window.aiFeatures.showAlert) {
-        return window.aiFeatures.showAlert(message, type, autoDismiss);
-    }
+    // Generate a unique ID for the alert if not provided
+    const alertId = id || `alert-${Date.now()}`;
     
-    // Otherwise create our own alert
-    const alertsContainer = document.querySelector('.alerts-container') || 
-                           document.createElement('div');
+    // Create the alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.id = alertId;
     
-    if (!document.querySelector('.alerts-container')) {
-        alertsContainer.className = 'alerts-container';
-        alertsContainer.style.position = 'fixed';
-        alertsContainer.style.top = '20px';
-        alertsContainer.style.right = '20px';
-        alertsContainer.style.zIndex = '1050';
-        document.body.appendChild(alertsContainer);
-    }
-    
-    // Remove existing alert with the same ID if it exists
-    if (id) {
-        const existingAlert = document.getElementById(id);
-        if (existingAlert) {
-            existingAlert.remove();
-        }
-    }
-    
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type} alert-dismissible fade show`;
-    if (id) {
-        alert.id = id;
-    }
-    
-    alert.innerHTML = `
+    // Set the content
+    alertDiv.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
     
-    alertsContainer.appendChild(alert);
-    
-    if (autoDismiss) {
-        setTimeout(() => {
-            alert.classList.remove('show');
-            setTimeout(() => alert.remove(), 150);
-        }, 5000);
+    // Find alert container or create one if it doesn't exist
+    let alertContainer = document.querySelector('.alert-container');
+    if (!alertContainer) {
+        alertContainer = document.createElement('div');
+        alertContainer.className = 'alert-container mb-3';
+        const container = document.querySelector('.container');
+        if (container && container.firstChild) {
+            container.insertBefore(alertContainer, container.firstChild);
+        } else {
+            document.body.prepend(alertContainer);
+            // If adding to body, style it as a floating alert
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.maxWidth = '300px';
+        }
     }
     
-    // Add click handler to close button
-    alert.querySelector('.btn-close').addEventListener('click', function() {
-        alert.classList.remove('show');
-        setTimeout(() => alert.remove(), 150);
-    });
+    // Add the alert to the container
+    alertContainer.prepend(alertDiv);
     
-    return id || alert;
+    // Initialize the Bootstrap alert
+    try {
+        const bsAlert = new bootstrap.Alert(alertDiv);
+        
+        // Auto-dismiss after 5 seconds if specified
+        if (autoDismiss) {
+            setTimeout(() => {
+                if (alertDiv && alertDiv.parentNode) {
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    } catch (error) {
+        console.error('Error initializing Bootstrap alert:', error);
+        // Fallback for dismissing alert
+    if (autoDismiss) {
+        setTimeout(() => {
+                if (alertDiv && alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+        }, 5000);
+        }
+    }
+    
+    return alertId;
 }
 
 // Helper function to remove an alert by ID
 function removeAlert(id) {
-    if (!id) return;
-    
-    const alert = document.getElementById(id);
-    if (alert) {
-        alert.classList.remove('show');
-        setTimeout(() => alert.remove(), 150);
-    }
-}
-
-// Add a listener to check for redirections
-window.addEventListener('load', function() {
-    const lastNoteId = localStorage.getItem('lastCreatedNoteId');
-    const lastTimestamp = localStorage.getItem('lastCreatedNoteTimestamp');
-    
-    // Only process if we have a note ID and it's recent (within the last minute)
-    if (lastNoteId && lastTimestamp) {
-        const now = Date.now();
-        const timestamp = parseInt(lastTimestamp);
-        
-        // If the timestamp is within the last minute
-        if (now - timestamp < 60000) {
-            console.log('Found recent note creation, checking if we need to redirect');
-            
-            // Check if we're on the notes list page
-            const notesListElement = document.getElementById('notes-list');
-            if (notesListElement && 
-                window.getComputedStyle(notesListElement).display !== 'none') {
-                
-                console.log('On notes list page, redirecting to edit mode');
-                if (typeof window.editNote === 'function') {
-                    window.editNote(parseInt(lastNoteId));
-                }
+    const alertDiv = document.getElementById(id);
+    if (alertDiv) {
+        try {
+            const bsAlert = bootstrap.Alert.getInstance(alertDiv);
+            if (bsAlert) {
+                bsAlert.close();
             } else {
-                // Clear old data
-                localStorage.removeItem('lastCreatedNoteId');
-                localStorage.removeItem('lastCreatedNoteTimestamp');
+                alertDiv.remove();
+            }
+        } catch (error) {
+            console.error('Error removing alert:', error);
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
             }
         }
     }
-}); // Added the missing closing bracket here
+}
+
+// Export functions for use in other modules
+window.pdfHandler = {
+    handlePdfUpload,
+    showAlert,
+    removeAlert
+};
 
 // Add this at the end of the file
 window.addEventListener('load', function() {
@@ -619,7 +489,6 @@ window.pdfHandler = {
     removeAlert
 };
 
-
 // Add this function at the top of your file, before it's called
 function forceEditMode(noteId) {
     if (!noteId) return;
@@ -646,7 +515,12 @@ function forceEditMode(noteId) {
         // Try to fetch and populate the note data
         fetch(`${PDF_API_URL}/api/notes/${noteId}`)
             .then(response => {
-                if (!response.ok) throw new Error('Failed to fetch note');
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('Note not found - it may have been deleted');
+                    }
+                    throw new Error('Failed to fetch note');
+                }
                 return response.json();
             })
             .then(note => {
@@ -702,6 +576,31 @@ function forceEditMode(noteId) {
             .catch(error => {
                 console.error('Error fetching note:', error);
                 showAlert('Error fetching note: ' + error.message, 'danger');
+                
+                // If note is not found or there's an error, escape from edit mode
+                if (error.message.includes('not found') || error.message.includes('deleted')) {
+                    console.log('Note not found, redirecting to notes list');
+                    // Show notes list instead
+                    if (notesListView) {
+                        notesListView.style.display = 'block';
+                        createEditView.style.display = 'none';
+                    }
+                    
+                    // Clear session storage flags
+                    sessionStorage.removeItem('forceEditModeNoteId');
+                    sessionStorage.removeItem('forceEditModeTimestamp');
+                    
+                    // Also try using the showNotesView function
+                    if (typeof window.showNotesView === 'function') {
+                        window.showNotesView();
+                    }
+                    
+                    // Reset the form
+                    const form = document.getElementById('note-form');
+                    if (form) {
+                        form.reset();
+                    }
+                }
             });
     } else {
         // If we can't find the view elements directly, try using the toggleViews function
@@ -760,4 +659,18 @@ function forceEditMode(noteId) {
             }
         }
     }, 500);
+    
+    // Add escape mechanism - if Cancel button exists, add click listener
+    const cancelBtn = document.getElementById('cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            // Clear storage and show notes list
+            sessionStorage.removeItem('forceEditModeNoteId');
+            sessionStorage.removeItem('forceEditModeTimestamp');
+            
+            if (typeof window.showNotesView === 'function') {
+                window.showNotesView();
+            }
+        });
+    }
 }

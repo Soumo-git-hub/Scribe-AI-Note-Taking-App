@@ -14,6 +14,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Add Toastify CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-toastify@11.0.5/dist/ReactToastify.min.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -58,6 +60,9 @@
     </nav>
 
     <div class="container mt-4">
+        <!-- Alert Container for notifications -->
+        <div class="alert-container mb-3"></div>
+        
         <!-- Notes List View -->
         <div id="notes-view">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -242,13 +247,19 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Add html2canvas for screenshots and exports -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- Add react-toastify for better notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/react-toastify@11.0.5/dist/ReactToastify.min.js"></script>
     <!-- Scripts in correct order for proper initialization -->
     <script src="js/ai-features.js"></script>
     <script src="js/pdf-handler.js"></script>
+    <script src="js/dark-mode.js"></script>
     
     <!-- Keep only this line -->
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-    <script src="js/dark-mode.js"></script>
+    
+    <!-- Main application script should be loaded last -->
     <script src="js/main.js"></script>
 </body>
 </html>

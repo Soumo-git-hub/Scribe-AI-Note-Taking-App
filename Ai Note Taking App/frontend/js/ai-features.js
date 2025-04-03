@@ -2,7 +2,9 @@
 // This file contains functions for AI-powered features like summary, quiz, and mindmap generation
 
 // API Configuration (shared with main.js)
-const AI_API_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
+const AI_API_URL = location.protocol === 'file:' 
+    ? 'http://localhost:8001' 
+    : `${window.location.protocol}//${window.location.hostname}:8001`;
 
 // AI Feature Functions
 async function generateSummary(content, summaryContainer) {

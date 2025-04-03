@@ -1,5 +1,7 @@
 // API Configuration
-const API_URL = window.location.protocol + '//' + window.location.hostname + ':8000';
+const API_URL = location.protocol === 'file:' 
+    ? 'http://localhost:8001' 
+    : `${window.location.protocol}//${window.location.hostname}:8001`;
 
 // Global variables
 let notes = [];
@@ -7,6 +9,22 @@ let currentNote = null;
 let summaryData = null;
 let quizData = null;
 let mindmapData = null;
+
+// Add protection against refreshes during PDF processing
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevent automatic form submissions when processing PDFs
+    const noteForm = document.getElementById('note-form');
+    if (noteForm) {
+        noteForm.addEventListener('submit', function(e) {
+            if (window.pdfProcessingInProgress) {
+                console.log('Form submission prevented during PDF processing');
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }, true); // Use capturing phase to intercept early
+    }
+});
 
 // DOM Elements
 const elements = {
@@ -240,7 +258,22 @@ async function loadNotes() {
 
 // Modify the saveNote function to work with the entire note object
 async function saveNote(e) {
+    if (e) {
     e.preventDefault();
+    }
+    
+    console.log('Saving note...');
+    
+    // Check if we are in the process of PDF extraction but exempt auto-save
+    const isPdfAutoSave = window.pdfAutoSave === true;
+    
+    // If we're processing a PDF but not doing an auto-save, prevent saving
+    if (window.pdfProcessingInProgress && !isPdfAutoSave) {
+        console.log('PDF processing in progress, save prevented');
+        window.aiFeatures.showAlert('Please wait for PDF processing to complete before saving', 'warning');
+        return false;
+    }
+    
     const noteData = {
         title: elements.title.value,
         content: elements.content.value,
@@ -249,24 +282,39 @@ async function saveNote(e) {
         mindmap: mindmapData ? JSON.stringify(mindmapData) : null
     };
 
+    console.log('Saving note with data:', noteData);
+
     try {
         // Use the note object directly instead of just the ID
         const noteId = elements.noteId.value;
-        const response = await fetch(`${API_URL}/api/notes${noteId ? '/' + noteId : ''}`, {
+        const url = `${API_URL}/api/notes${noteId ? '/' + noteId : ''}`;
+        console.log(`Saving to URL: ${url}, method: ${noteId ? 'PUT' : 'POST'}`);
+        
+        const response = await fetch(url, {
             method: noteId ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(noteData)
         });
 
-        if (!response.ok) throw new Error('Failed to save note');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to save note:', response.status, errorText);
+            throw new Error('Failed to save note: ' + errorText);
+        }
         
         // Get the response data
         const responseData = await response.json();
+        console.log('Save response:', responseData);
         
         // If this was a new note, update the note ID field
         if (!elements.noteId.value && responseData.id) {
             elements.noteId.value = responseData.id;
             elements.formTitle.textContent = 'Edit Note';
+            console.log('Updated note ID field to:', responseData.id);
+            
+            // Store the new note ID
+            localStorage.setItem('lastCreatedNoteId', responseData.id);
+            localStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
         }
         
         // Show success message
@@ -275,6 +323,7 @@ async function saveNote(e) {
         // Check if we should stay in edit mode
         if (window.stayInEditMode) {
             console.log('Staying in edit mode after save due to stayInEditMode flag');
+            window.stayInEditMode = false; // Reset the flag
             // Don't redirect, just stay in the current view
             return;
         }
@@ -316,12 +365,26 @@ async function loadNotesInBackground() {
 
 async function deleteCurrentNote() {
     try {
-        const response = await fetch(`${API_URL}/api/notes/${currentNote.id}`, {
+        const noteId = currentNote.id;
+        const response = await fetch(`${API_URL}/api/notes/${noteId}`, {
             method: 'DELETE'
         });
         if (!response.ok) throw new Error('Failed to delete note');
+        
+        // Close the modal and show success message
         elements.deleteModal.hide();
         window.aiFeatures.showAlert('Note deleted successfully!', 'success');
+        
+        // Clean up any stored references to the deleted note
+        localStorage.removeItem('lastCreatedNoteId');
+        localStorage.removeItem('lastCreatedNoteTimestamp');
+        sessionStorage.removeItem('forceEditModeNoteId');
+        sessionStorage.removeItem('forceEditModeTimestamp');
+        
+        // Clear currentNote reference
+        currentNote = null;
+        
+        // Navigate to notes view
         showNotesView();
     } catch (error) {
         window.aiFeatures.showAlert('Error deleting note: ' + error.message, 'danger');
@@ -562,14 +625,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (elements.noteForm) {
         elements.noteForm.addEventListener('submit', function(e) {
-            // Don't submit if PDF processing is in progress
+            // Check if PDF is being processed
             if (window.pdfProcessingInProgress) {
+                console.log('Form submission prevented during PDF processing');
                 e.preventDefault();
-                window.aiFeatures.showAlert('Please wait for PDF processing to complete', 'warning');
+                e.stopPropagation();
                 return false;
             }
+            
+            // Regular form submission can continue
+            console.log('Form submission allowed');
             saveNote(e);
-        });
+        }, true); // Use capturing phase to intercept early
     }
     if (elements.cancelBtn) elements.cancelBtn.addEventListener('click', showNotesView);
     if (elements.summarizeBtn) elements.summarizeBtn.addEventListener('click', generateSummary);
@@ -616,39 +683,78 @@ window.loadNotes = loadNotes;
 // Add a function to save PDF content without refreshing
 window.savePdfContent = async function(title, content) {
     try {
-        // Format the content as markdown if needed
-        const formattedContent = content;
+        console.log('Saving PDF content with title:', title);
+        // Ensure we have content and a title
+        const titleToUse = title || 'Notes from PDF';
         
+        // Create the note data
         const noteData = {
-            title: title || 'Notes from PDF',
-            content: formattedContent,
+            title: titleToUse,
+            content: content,
             summary: null,
             quiz: null,
             mindmap: null
         };
 
+        console.log('Sending note data to API:', noteData);
         const response = await fetch(`${API_URL}/api/notes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(noteData)
         });
 
-        if (!response.ok) throw new Error('Failed to save PDF content');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to save PDF content, status:', response.status, errorText);
+            throw new Error('Failed to save PDF content: ' + errorText);
+        }
         
+        // Parse the response
         const result = await response.json();
-        window.aiFeatures.showAlert('PDF content saved as a new note!', 'success');
+        console.log('PDF content saved successfully, response:', result);
         
-        // Refresh the notes list without changing the view
-        await loadNotesInBackground();
+        // Ensure we have an ID
+        if (!result.id) {
+            console.error('No ID returned from API');
+            throw new Error('No ID returned from API');
+        }
+        
+        // Store the new note ID in both localStorage and in the form
+        localStorage.setItem('lastCreatedNoteId', result.id);
+        localStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
+        
+        // Update the form if we're in edit mode
+        const noteIdField = document.getElementById('note-id');
+        if (noteIdField) {
+            noteIdField.value = result.id;
+            console.log('Updated note ID field to:', result.id);
+        }
+        
+        // Show success message
+        if (window.aiFeatures && window.aiFeatures.showAlert) {
+            window.aiFeatures.showAlert('PDF content saved as a new note!', 'success');
+        } else {
+            showAlert('PDF content saved as a new note!', 'success');
+        }
         
         // Set flag to prevent navigation away from edit view
         window.stayInEditMode = true;
         
-        // Return the complete note object
-        return result;
+        // Also update the notes list without changing the view
+        await loadNotesInBackground();
+        
+        return {
+            id: result.id,
+            title: titleToUse,
+            content: content
+        };
     } catch (error) {
         console.error('Error saving PDF content:', error);
+        if (window.aiFeatures && window.aiFeatures.showAlert) {
         window.aiFeatures.showAlert('Error saving PDF content: ' + error.message, 'danger');
+        } else {
+            showAlert('Error saving PDF content: ' + error.message, 'danger');
+        }
         return null;
     }
 };
@@ -666,228 +772,120 @@ window.editNote = function(noteObj) {
         const foundNote = notes.find(n => n.id == noteObj);
         if (foundNote) {
             noteToEdit = foundNote;
+            editCurrentNote();
         } else {
             // Try to fetch the note from the server
             fetch(`${API_URL}/api/notes/${noteObj}`)
                 .then(response => {
-                    if (!response.ok) throw new Error('Note not found');
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Note not found - it may have been deleted');
+                        }
+                        throw new Error('Failed to fetch note');
+                    }
                     return response.json();
                 })
-                .then(note => {
-                    if (note) {
-                        // Populate the form with the fetched note
-                        populateNoteForm(note);
+                .then(data => {
+                    if (data.note) {
+                        noteToEdit = data.note;
+                        editCurrentNote();
                     } else {
-                        throw new Error('Note not found');
+                        console.error('Note not found in the database');
+                        window.aiFeatures.showAlert('Note not found in the database', 'warning');
+                        showNotesView();
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching note:', error);
-                    window.aiFeatures.showAlert('Note not found or may have been deleted', 'warning');
+                    window.aiFeatures.showAlert('Error fetching note: ' + error.message, 'warning');
                     
-                    // Clear any stored references to this note
-                    if (localStorage.getItem('lastCreatedNoteId') == noteObj) {
-                        localStorage.removeItem('lastCreatedNoteId');
-                        localStorage.removeItem('lastCreatedNoteTimestamp');
-                    }
-                    
-                    // Redirect to notes view
+                    // If note is not found or there's an error, escape from edit mode and show notes list
+                    if (error.message.includes('not found') || error.message.includes('deleted')) {
+                        console.log('Note not found, redirecting to notes list');
                     showNotesView();
+                    }
                 });
-            return;
+            return; // Return early since we're handling this asynchronously
         }
     }
     
-    // Now we have a note object, populate the form
-    populateNoteForm(noteToEdit);
-    
-    function populateNoteForm(note) {
-        elements.noteId.value = note.id || '';
-        elements.title.value = note.title || '';
-        elements.content.value = note.content || '';
-        
-        // Update form title
-        elements.formTitle.textContent = 'Edit Note';
-        
-        // Show the edit view
-        toggleViews('createEditView');
-        
-        // Load AI features if available
-        if (note.summary) {
-            elements.summaryContent.innerHTML = formatContent(note.summary);
-            summaryData = note.summary;
-        }
-        
-        if (note.quiz) {
-            try {
-                const parsedQuizData = typeof note.quiz === 'string' 
-                    ? JSON.parse(note.quiz) 
-                    : note.quiz;
-                    
-                window.aiFeatures.renderQuiz(parsedQuizData, elements.quizContent);
-                quizData = parsedQuizData;
-            } catch (e) {
-                console.error('Error parsing quiz data:', e);
-                elements.quizContent.textContent = 'Error loading quiz data.';
-            }
-        }
-        
-        if (note.mindmap) {
-            try {
-                const parsedMindmapData = typeof note.mindmap === 'string' 
-                    ? JSON.parse(note.mindmap) 
-                    : note.mindmap;
-                    
-                window.aiFeatures.renderMindMap(parsedMindmapData, elements.mindmapContent);
-                mindmapData = parsedMindmapData;
-            } catch (e) {
-                console.error('Error parsing mindmap data:', e);
-                elements.mindmapContent.textContent = 'Error loading mindmap data.';
-            }
-        }
+    if (noteToEdit) {
+        console.log('Opening note for editing:', noteToEdit);
+        editCurrentNote();
+    } else {
+        console.error('Note not found for editing');
+        window.aiFeatures.showAlert('Note not found for editing', 'warning');
+        showNotesView();
     }
 };
 
-// Global function to force edit mode for a specific note
-window.forceEditMode = function(noteObj) {
-    if (!noteObj) return;
-    
-    console.log('Forcing edit mode for note:', noteObj);
-    
-    // Set a flag to stay in edit mode
-    window.stayInEditMode = true;
-    
-    // If we have a note object, store it in memory
-    if (typeof noteObj === 'object') {
-        // Store the note in memory for immediate access
-        window.tempNote = noteObj;
+// Add a direct content save function for PDF extraction
+window.saveCurrentContent = async function() {
+    try {
+        console.log('Saving current content directly');
         
-        // Call editNote with the note object
-        window.editNote(noteObj);
-    } else {
-        // If we just have an ID, call editNote with it
-        window.editNote(noteObj);
+        // Get the content and title
+        const title = elements.title.value || 'Notes from PDF';
+        const content = elements.content.value;
+        
+        if (!content || content.trim() === '') {
+            console.error('No content to save');
+            return null;
+        }
+        
+        // Create note data
+        const noteData = {
+            title: title,
+            content: content,
+            summary: summaryData,
+            quiz: quizData ? JSON.stringify(quizData) : null,
+            mindmap: mindmapData ? JSON.stringify(mindmapData) : null
+        };
+        
+        console.log('Saving content with data:', noteData);
+        
+        // Check if we're editing an existing note
+        const noteId = elements.noteId.value;
+        const url = `${API_URL}/api/notes${noteId ? '/' + noteId : ''}`;
+        
+        // Perform the save
+        const response = await fetch(url, {
+            method: noteId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(noteData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to save content:', response.status, errorText);
+            throw new Error('Failed to save content: ' + errorText);
+        }
+        
+        // Get the response
+        const responseData = await response.json();
+        console.log('Save content response:', responseData);
+        
+        // If this was a new note, update the note ID
+        if (!noteId && responseData.id) {
+            elements.noteId.value = responseData.id;
+            elements.formTitle.textContent = 'Edit Note';
+            console.log('Updated note ID to:', responseData.id);
+            
+            // Store the ID for navigation
+            localStorage.setItem('lastCreatedNoteId', responseData.id);
+            localStorage.setItem('lastCreatedNoteTimestamp', Date.now().toString());
+        }
+        
+        // Show success
+        window.aiFeatures.showAlert('Content saved successfully!', 'success');
+        
+        // Update notes list in background
+        loadNotesInBackground();
+        
+        return responseData;
+    } catch (error) {
+        console.error('Error saving content directly:', error);
+        window.aiFeatures.showAlert('Error saving content: ' + error.message, 'danger');
+        return null;
     }
 };
-
-// Function to handle showing alert messages
-function showAlert(message, type = 'info') {
-    // Check if aiFeatures is available
-    if (window.aiFeatures && window.aiFeatures.showAlert) {
-        window.aiFeatures.showAlert(message, type);
-    } else {
-        // Fallback alert implementation
-        const alertContainer = document.getElementById('alert-container') || document.createElement('div');
-        if (!document.getElementById('alert-container')) {
-            alertContainer.id = 'alert-container';
-            alertContainer.style.position = 'fixed';
-            alertContainer.style.top = '20px';
-            alertContainer.style.right = '20px';
-            alertContainer.style.zIndex = '9999';
-            document.body.appendChild(alertContainer);
-        }
-        
-        const alertElement = document.createElement('div');
-        alertElement.className = `alert alert-${type} alert-dismissible fade show`;
-        alertElement.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        
-        alertContainer.appendChild(alertElement);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            alertElement.classList.remove('show');
-            setTimeout(() => alertElement.remove(), 300);
-        }, 5000);
-    }
-}
-
-// Make showAlert available globally
-window.showAlert = showAlert;
-
-// 4. Add real-time markdown preview for the editor:
-function setupMarkdownPreview() {
-    // Create a preview div
-    const previewContainer = document.createElement('div');
-    previewContainer.id = 'markdown-preview';
-    previewContainer.className = 'form-control markdown-preview';
-    previewContainer.style.height = elements.content.offsetHeight + 'px';
-    previewContainer.style.overflow = 'auto';
-    previewContainer.style.display = 'none';
-    
-    // Insert after the textarea
-    elements.content.parentNode.insertBefore(previewContainer, elements.content.nextSibling);
-    
-    // Create toggle button
-    const toggleButton = document.createElement('button');
-    toggleButton.type = 'button';
-    toggleButton.className = 'btn btn-sm btn-outline-secondary mt-2';
-    toggleButton.innerHTML = '<i class="bi bi-eye"></i> Toggle Preview';
-    toggleButton.addEventListener('click', () => {
-        if (previewContainer.style.display === 'none') {
-            previewContainer.innerHTML = formatContent(elements.content.value);
-            previewContainer.style.display = 'block';
-            elements.content.style.display = 'none';
-            toggleButton.innerHTML = '<i class="bi bi-pencil"></i> Edit';
-        } else {
-            previewContainer.style.display = 'none';
-            elements.content.style.display = 'block';
-            toggleButton.innerHTML = '<i class="bi bi-eye"></i> Toggle Preview';
-        }
-    });
-    
-    // Add real-time preview update
-    elements.content.addEventListener('input', () => {
-        if (previewContainer.style.display !== 'none') {
-            previewContainer.innerHTML = formatContent(elements.content.value);
-        }
-    });
-    
-    // Insert toggle button after the textarea
-    elements.content.parentNode.insertBefore(toggleButton, previewContainer.nextSibling);
-}
-
-// Call this function after elements are initialized
-document.addEventListener('DOMContentLoaded', () => {
-    // After your existing initialization code
-    if (elements.content) {
-        setupMarkdownPreview();
-    }
-});
-
-// Add this to your document ready function or at the end of your JS file
-
-// Set the user name in the navbar
-function updateUserProfile() {
-    const userData = JSON.parse(localStorage.getItem('user'));
-    if (userData && userData.name) {
-        document.getElementById('user-name').textContent = userData.name;
-    }
-}
-
-// Call this function when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Your existing code...
-    
-    // Update user profile
-    updateUserProfile();
-    
-    // Add event listener for logout button
-    document.getElementById('logout-button').addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // Clear user data from localStorage
-        localStorage.removeItem('user');
-        
-        // Redirect to login page
-        window.location.href = 'login.html';
-    });
-    
-    // For now, just show an alert for the settings option
-    document.getElementById('profile-settings').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Settings functionality will be implemented in a future update.');
-    });
-});

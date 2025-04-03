@@ -18,6 +18,8 @@ from contextlib import asynccontextmanager
 from ai_service import get_ai_service
 from PyPDF2 import PdfReader
 from werkzeug.utils import secure_filename
+from PIL import Image
+import pytesseract
 
 # Configure logging
 logging.basicConfig(
@@ -31,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Application startup and shutdown events
-# Import the init_db function from your database module
+# Import the init_db function from database module
 from database import init_db, get_all_notes, get_note_by_id, save_note, update_note, delete_note
 
 @asynccontextmanager
@@ -67,7 +69,13 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     max_age=86400,  # 24 hours
+    expose_headers=["Content-Length", "Content-Type", "Content-Disposition"],
 )
+
+# Status endpoint for health checks
+@app.get("/api/status")
+async def get_status():
+    return {"status": "ok", "version": "2.0.0"}
 
 # Add error handling middleware
 @app.middleware("http")
@@ -127,7 +135,7 @@ class NoteUpdate(BaseModel):
 # API Configuration class
 class APIConfig:
     def __init__(self):
-        self.huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY", "YOUR_API_KEY_HERE")
+        self.huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY", "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")
         self.huggingface_api_url = "https://api-inference.huggingface.co/models/"
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"
         self.max_retries = 3
@@ -218,6 +226,345 @@ async def api_delete_note(note_id: int):
     except Exception as e:
         logger.error(f"Failed to delete note {note_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete note {note_id}")
+
+# PDF processing endpoints
+# Add PDF processing configuration
+UPLOAD_FOLDER = 'uploads/'
+ALLOWED_EXTENSIONS = {'pdf'}
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Single PDF upload endpoint
+@app.post("/api/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    """
+    Process an uploaded PDF file and extract text content.
+    """
+    try:
+        logger.info(f"Received PDF upload: {file.filename}")
+        
+        # Validate file type
+        if not file.filename.lower().endswith('.pdf'):
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Only PDF files are accepted"}
+            )
+        
+        # Create temp directory if it doesn't exist
+        temp_dir = Path(__file__).parent / "temp"
+        temp_dir.mkdir(exist_ok=True)
+        
+        # Save the uploaded file with a timestamp to avoid conflicts
+        timestamp = int(time.time())
+        safe_filename = secure_filename(file.filename)
+        file_path = temp_dir / f"{timestamp}_{safe_filename}"
+        
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
+        
+        logger.info(f"Saved PDF to {file_path}")
+        
+        # Extract text from PDF
+        extracted_text = ""
+        try:
+            with open(file_path, "rb") as pdf_file:
+                pdf_reader = PdfReader(pdf_file)
+                for page in pdf_reader.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        extracted_text += page_text + "\n\n"
+            
+            # Clean up the extracted text
+            extracted_text = extracted_text.strip()
+            
+            # Get a title suggestion from the first few words
+            title_suggestion = " ".join(extracted_text.split()[:5]) + "..."
+            if len(title_suggestion) > 50:
+                title_suggestion = title_suggestion[:50] + "..."
+            
+            logger.info(f"Successfully extracted {len(extracted_text)} characters from PDF")
+            
+            # Schedule file for deletion after 10 minutes
+            asyncio.create_task(delete_file_after_delay(file_path, delay=600))
+            
+            return {
+                "text": extracted_text,
+                "title": title_suggestion,
+                "pages": len(pdf_reader.pages),
+                "filename": file.filename
+            }
+        except Exception as e:
+            logger.error(f"Error extracting text from PDF: {str(e)}")
+            # Try to clean up the file
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+            except:
+                pass
+                
+            return JSONResponse(
+                status_code=500,
+                content={"detail": f"Error extracting text from PDF: {str(e)}"}
+            )
+    except Exception as e:
+        logger.error(f"Error processing PDF upload: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Error processing PDF upload: {str(e)}"}
+        )
+
+# Helper function to delete files after a delay
+async def delete_file_after_delay(file_path: Path, delay: int = 600):
+    """Delete a file after a specified delay in seconds"""
+    try:
+        await asyncio.sleep(delay)
+        if file_path.exists():
+            file_path.unlink()
+            logger.info(f"Deleted temporary file {file_path} after {delay} seconds")
+    except Exception as e:
+        logger.error(f"Error deleting temporary file {file_path}: {str(e)}")
+
+# Helper function to extract items from text
+def extract_items_from_text(text: str) -> List[str]:
+    items = []
+    list_pattern = r'\d+\.\s*(.*?)(?=\d+\.|$)'
+    import re
+    list_matches = re.findall(list_pattern, text, re.DOTALL)
+    if list_matches:
+        items = [item.strip() for item in list_matches if item.strip()]
+
+    if not items:
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        if lines:
+            items = lines
+
+    if not items:
+        if ',' in text:
+            items = [item.strip() for item in text.split(',') if item.strip()]
+        elif ';' in text:
+            items = [item.strip() for item in text.split(';') if item.strip()]
+
+    if not items:
+        sentences = [s.strip() for s in text.split('.') if s.strip()]
+        items = sentences
+
+    if len(items) == 1 and len(items[0].split()) > 10:
+        words = items[0].split()
+        items = [" ".join(words[i:i+5]) for i in range(0, len(words), 5)][:4]
+
+    return items
+
+# Handwriting recognition endpoint
+@app.post("/api/handwriting")
+async def process_handwriting(file: UploadFile = File(...)):
+    """
+    Process handwritten notes from an image or PDF file.
+    """
+    logger.info(f"Processing handwriting from file: {file.filename}")
+    
+    # Create a temporary directory if it doesn't exist
+    temp_dir = Path(__file__).parent / "temp"
+    temp_dir.mkdir(exist_ok=True)
+    
+    # Secure the filename to prevent path traversal attacks
+    timestamp = int(time.time())
+    safe_filename = secure_filename(file.filename)
+    file_path = temp_dir / f"{timestamp}_{safe_filename}"
+    
+    try:
+        # Save the uploaded file
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+        
+        logger.info(f"File saved to {file_path}")
+        
+        # Check if it's a PDF file
+        if file.filename.lower().endswith('.pdf'):
+            logger.info("Processing PDF file")
+            
+            # Extract text from PDF
+            text = ""
+            title = "Notes from " + file.filename
+            
+            try:
+                with open(file_path, "rb") as f:
+                    pdf = PdfReader(f)
+                    
+                    # Extract text from each page
+                    for page_num in range(len(pdf.pages)):
+                        page = pdf.pages[page_num]
+                        page_text = page.extract_text()
+                        if page_text:
+                            text += page_text + "\n\n"
+                    
+                    # If we have a title page, use it as the title
+                    if len(pdf.pages) > 0:
+                        first_page = pdf.pages[0].extract_text()
+                        if first_page:
+                            # Try to extract a title from the first few lines
+                            lines = first_page.split('\n')
+                            if lines and len(lines[0].strip()) > 0 and len(lines[0].strip()) < 100:
+                                title = lines[0].strip()
+                
+                logger.info(f"Successfully extracted {len(text)} characters from PDF")
+                
+                # Schedule file for deletion after 10 minutes
+                asyncio.create_task(delete_file_after_delay(file_path, delay=600))
+                
+                # Return in the same format as the upload-pdf endpoint for consistency
+                return {
+                    "text": text,
+                    "title": title,
+                    "pages": len(pdf.pages),
+                    "filename": file.filename
+                }
+                
+            except Exception as e:
+                logger.error(f"Error extracting text from PDF: {str(e)}")
+                # Try to clean up the file
+                try:
+                    if file_path.exists():
+                        file_path.unlink()
+                except:
+                    pass
+                    
+                return JSONResponse(
+                    status_code=500,
+                    content={"detail": f"Error extracting text from PDF: {str(e)}"}
+                )
+        else:
+            # For non-PDF files, use pytesseract for OCR
+            logger.info("Processing non-PDF file with OCR")
+            try:
+                # Load the image
+                image = Image.open(file_path)
+                
+                # Perform OCR
+                text = pytesseract.image_to_string(image)
+                
+                if not text or len(text.strip()) < 10:
+                    # Try to clean up the file
+                    try:
+                        if file_path.exists():
+                            file_path.unlink()
+                    except:
+                        pass
+                        
+                    return JSONResponse(
+                        status_code=400, 
+                        content={"detail": "Could not extract meaningful text from the image"}
+                    )
+                
+                # Schedule file for deletion after 10 minutes
+                asyncio.create_task(delete_file_after_delay(file_path, delay=600))
+                
+                return {
+                    "text": text,
+                    "title": "Notes from " + file.filename,
+                    "filename": file.filename
+                }
+            except Exception as e:
+                logger.error(f"Error processing image with OCR: {str(e)}")
+                # Try to clean up the file
+                try:
+                    if file_path.exists():
+                        file_path.unlink()
+                except:
+                    pass
+                    
+                return JSONResponse(
+                    status_code=500,
+                    content={"detail": f"Error processing image: {str(e)}"}
+                )
+    except Exception as e:
+        logger.error(f"Error processing file: {str(e)}")
+        # Try to clean up the file
+        try:
+            if file_path.exists():
+                file_path.unlink()
+        except:
+            pass
+            
+        return JSONResponse(
+            status_code=500, 
+            content={"detail": f"Error processing file: {str(e)}"}
+        )
+
+# Text-to-speech endpoint
+@app.post("/api/text-to-speech", response_model=Dict[str, str])
+async def text_to_speech(note: NoteContent):
+    try:
+        return {"message": "Text-to-speech feature coming soon!"}
+    except Exception as e:
+        logger.error(f"Failed to convert text to speech: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to convert text to speech: {str(e)}")
+
+# Start the application
+if __name__ == "__main__":
+    import socket
+
+    def find_available_port(start_port=8000, max_attempts=10):
+        for port_attempt in range(start_port, start_port + max_attempts):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('0.0.0.0', port_attempt))
+                    return port_attempt
+            except OSError:
+                logger.warning(f"Port {port_attempt} is already in use, trying next port...")
+                continue
+
+        logger.warning(f"No available ports found in range {start_port}-{start_port + max_attempts - 1}")
+        return start_port + max_attempts
+
+    preferred_port = 8000
+    port = find_available_port(preferred_port)
+
+    logger.info(f"Starting server on port {port}")
+    
+    import sys
+    if "--reload" in sys.argv:
+        # Development mode with auto-reload
+        import uvicorn
+        uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
+    else:
+        # Production mode
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=port)
+
+# Add this endpoint after your other API endpoints
+@app.post("/api/test-ai", response_model=Dict[str, str])
+async def test_ai_service(content: NoteContent):
+    try:
+        ai_service = get_ai_service()
+        summary = ai_service.summarize_text(content.content)
+        quiz_result = ai_service.generate_quiz(content.content)
+        quiz_json = json.dumps(quiz_result)
+        mindmap_result = ai_service.generate_mindmap(content.content)
+        mindmap_json = json.dumps(mindmap_result)
+        return {
+            "status": "success",
+            "summary": summary,
+            "quiz": quiz_json,
+            "mindmap": mindmap_json
+        }
+    except Exception as e:
+        logger.error(f"AI service test failed: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/debug/ai-service", response_model=Dict[str, Any])
+async def debug_ai_service():
+    try:
+        ai_service = get_ai_service()
+        result = ai_service.debug_api_connection()
+        return result
+    except Exception as e:
+        logger.error(f"AI service debug failed: {str(e)}")
+        return {"success": False, "error": str(e)}
 
 # Improved HuggingFace API client
 async def query_huggingface(
@@ -350,278 +697,3 @@ async def generate_mindmap(note: NoteContent):
     except Exception as e:
         logger.error(f"Failed to generate mind map: {str(e)}")
         return {"mindmap": {"central": "Error", "branches": []}}
-
-# Helper function to extract items from text
-def extract_items_from_text(text: str) -> List[str]:
-    items = []
-    list_pattern = r'\d+\.\s*(.*?)(?=\d+\.|$)'
-    import re
-    list_matches = re.findall(list_pattern, text, re.DOTALL)
-    if list_matches:
-        items = [item.strip() for item in list_matches if item.strip()]
-
-    if not items:
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
-        if lines:
-            items = lines
-
-    if not items:
-        if ',' in text:
-            items = [item.strip() for item in text.split(',') if item.strip()]
-        elif ';' in text:
-            items = [item.strip() for item in text.split(';') if item.strip()]
-
-    if not items:
-        sentences = [s.strip() for s in text.split('.') if s.strip()]
-        items = sentences
-
-    if len(items) == 1 and len(items[0].split()) > 10:
-        words = items[0].split()
-        items = [" ".join(words[i:i+5]) for i in range(0, len(words), 5)][:4]
-
-    return items
-
-# Handwriting recognition endpoint
-# Add or update the handwriting endpoint to properly handle PDFs
-@app.post("/api/handwriting")
-async def process_handwriting(file: UploadFile = File(...)):
-    """
-    Process handwritten notes from an image or PDF file.
-    """
-    logger.info(f"Processing handwriting from file: {file.filename}")
-    
-    # Create a temporary directory if it doesn't exist
-    temp_dir = Path("temp")
-    temp_dir.mkdir(exist_ok=True)
-    
-    # Secure the filename to prevent path traversal attacks
-    filename = secure_filename(file.filename)
-    file_path = temp_dir / filename
-    
-    try:
-        # Save the uploaded file
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
-        logger.info(f"File saved to {file_path}")
-        
-        # Check if it's a PDF file
-        if filename.lower().endswith('.pdf'):
-            logger.info("Processing PDF file")
-            
-            # Extract text from PDF
-            text = ""
-            title = "Notes from " + filename
-            
-            try:
-                with open(file_path, "rb") as f:
-                    pdf = PdfReader(f)
-                    
-                    # Extract text from each page
-                    for page_num in range(len(pdf.pages)):
-                        page = pdf.pages[page_num]
-                        page_text = page.extract_text()
-                        if page_text:
-                            text += page_text + "\n\n"
-                    
-                    # If we have a title page, use it as the title
-                    if len(pdf.pages) > 0:
-                        first_page = pdf.pages[0].extract_text()
-                        if first_page:
-                            # Try to extract a title from the first few lines
-                            lines = first_page.split('\n')
-                            if lines and len(lines[0].strip()) > 0 and len(lines[0].strip()) < 100:
-                                title = lines[0].strip()
-                
-                logger.info(f"Successfully extracted {len(text)} characters from PDF")
-                
-                # If text extraction failed or returned very little text, try OCR
-                if len(text.strip()) < 100:
-                    logger.info("PDF text extraction yielded little text, trying AI service")
-                    ai_service = get_ai_service()
-                    if ai_service:
-                        ai_text = await ai_service.extract_text_from_pdf(str(file_path))
-                        if ai_text and len(ai_text) > len(text):
-                            text = ai_text
-                            logger.info(f"AI service extracted {len(text)} characters")
-                
-                return {
-                    "success": True,
-                    "text": text,
-                    "title": title
-                }
-                
-            except Exception as e:
-                logger.error(f"Error extracting text from PDF: {str(e)}")
-                return {"success": False, "error": f"Error extracting text from PDF: {str(e)}"}
-        else:
-            # For non-PDF files, use the AI service
-            logger.info("Processing non-PDF file with AI service")
-            ai_service = get_ai_service()
-            if not ai_service:
-                return {"success": False, "error": "AI service not available"}
-            
-            text = await ai_service.extract_text_from_image(str(file_path))
-            return {
-                "success": True,
-                "text": text,
-                "title": "Notes from " + filename
-            }
-            
-    except Exception as e:
-        logger.error(f"Error processing file: {str(e)}")
-        return {"success": False, "error": f"Error processing file: {str(e)}"}
-    finally:
-        # Clean up the temporary file
-        if file_path.exists():
-            file_path.unlink()
-
-# Text-to-speech endpoint
-@app.post("/api/text-to-speech", response_model=Dict[str, str])
-async def text_to_speech(note: NoteContent):
-    try:
-        return {"message": "Text-to-speech feature coming soon!"}
-    except Exception as e:
-        logger.error(f"Failed to convert text to speech: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to convert text to speech: {str(e)}")
-
-# Start the application
-if __name__ == "__main__":
-    import socket
-
-    def find_available_port(start_port=8000, max_attempts=10):
-        for port_attempt in range(start_port, start_port + max_attempts):
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.bind(('0.0.0.0', port_attempt))
-                    return port_attempt
-            except OSError:
-                logger.warning(f"Port {port_attempt} is already in use, trying next port...")
-                continue
-
-        logger.warning(f"No available ports found in range {start_port}-{start_port + max_attempts - 1}")
-        return start_port + max_attempts
-
-    preferred_port = 8000
-    port = find_available_port(preferred_port)
-
-    logger.info(f"Starting server on port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port)
-
-# Add this endpoint after your other API endpoints
-@app.post("/api/test-ai", response_model=Dict[str, str])
-async def test_ai_service(content: NoteContent):
-    try:
-        ai_service = get_ai_service()
-        summary = ai_service.summarize_text(content.content)
-        quiz_result = ai_service.generate_quiz(content.content)
-        quiz_json = json.dumps(quiz_result)
-        mindmap_result = ai_service.generate_mindmap(content.content)
-        mindmap_json = json.dumps(mindmap_result)
-        return {
-            "status": "success",
-            "summary": summary,
-            "quiz": quiz_json,
-            "mindmap": mindmap_json
-        }
-    except Exception as e:
-        logger.error(f"AI service test failed: {str(e)}")
-        return {"status": "error", "message": str(e)}
-
-@app.get("/api/debug/ai-service", response_model=Dict[str, Any])
-async def debug_ai_service():
-    try:
-        ai_service = get_ai_service()
-        result = ai_service.debug_api_connection()
-        return result
-    except Exception as e:
-        logger.error(f"AI service debug failed: {str(e)}")
-        return {"success": False, "error": str(e)}
-
-# Add PDF processing configuration
-UPLOAD_FOLDER = 'uploads/'
-ALLOWED_EXTENSIONS = {'pdf'}
-
-# Ensure upload directory exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Single PDF upload endpoint - update this implementation
-@app.post("/api/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...)):
-    """Process uploaded PDF files and extract text"""
-    if not file.filename:
-        logger.error("No file provided in request")
-        return JSONResponse(
-            status_code=400,
-            content={"success": False, "error": "No selected file"}
-        )
-    
-    # Check file type
-    file_extension = file.filename.split('.')[-1].lower()
-    
-    if file_extension != 'pdf':
-        logger.error(f"Invalid file type: {file_extension}")
-        return JSONResponse(
-            status_code=400,
-            content={"success": False, "error": "Only PDF files are supported"}
-        )
-    
-    try:
-        # Create a temporary file to store the uploaded PDF
-        temp_file_path = f"temp_{secure_filename(file.filename)}"
-        logger.info(f"Creating temporary file: {temp_file_path}")
-        
-        # Read the file content
-        file_content = await file.read()
-        logger.info(f"Read {len(file_content)} bytes from uploaded file")
-        
-        with open(temp_file_path, "wb") as buffer:
-            buffer.write(file_content)
-        
-        logger.info(f"PDF saved to temporary file: {temp_file_path}")
-        
-        # Extract text from PDF
-        text = ""
-        try:
-            pdf = PdfReader(temp_file_path)
-            logger.info(f"PDF has {len(pdf.pages)} pages")
-            
-            for i, page in enumerate(pdf.pages):
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n\n"
-                logger.info(f"Extracted {len(page_text) if page_text else 0} characters from page {i+1}")
-        except Exception as e:
-            logger.error(f"Error extracting text from PDF: {str(e)}")
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "error": f"Error extracting text: {str(e)}"}
-            )
-        finally:
-            # Clean up the temporary file
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
-                logger.info(f"Removed temporary file: {temp_file_path}")
-        
-        if not text.strip():
-            logger.warning(f"No text extracted from PDF: {file.filename}")
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "No text could be extracted from the PDF"}
-            )
-        
-        logger.info(f"Successfully extracted {len(text)} characters from PDF")
-        return JSONResponse(
-            status_code=200,
-            content={"success": True, "text": text}
-        )
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": f"Error processing PDF: {str(e)}"}
-        )

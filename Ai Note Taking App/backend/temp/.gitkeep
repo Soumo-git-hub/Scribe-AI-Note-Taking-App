@@ -1,0 +1,2 @@
+# This file exists to ensure the temp directory is included in git
+# The temp directory is needed for temporary storage of uploaded files 

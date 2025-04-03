@@ -10,7 +10,7 @@ import pytesseract
 from collections import Counter
 from typing import List, Dict, Any, Optional, Union
 
-# Configure loggingz
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -20,12 +20,23 @@ try:
     from nltk.tokenize import sent_tokenize, word_tokenize
     from nltk.corpus import stopwords
 
-    # Initialize NLTK resources
-    nltk.download('punkt', quiet=True)
-    nltk.download('stopwords', quiet=True)
+    # Initialize NLTK resources - create data directory if needed
+    nltk_data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nltk_data')
+    os.makedirs(nltk_data_dir, exist_ok=True)
+    nltk.data.path.append(nltk_data_dir)
+    
+    # Download resources if not already present
+    for resource in ['punkt', 'stopwords']:
+        try:
+            nltk.data.find(f'tokenizers/{resource}')
+            logger.info(f"NLTK resource '{resource}' is already downloaded")
+        except LookupError:
+            logger.info(f"Downloading NLTK resource '{resource}'")
+            nltk.download(resource, download_dir=nltk_data_dir, quiet=True)
 
     # Get stopwords
     stop_words = set(stopwords.words('english'))
+    logger.info("NLTK initialized successfully")
 except Exception as e:
     logger.warning(f"Failed to initialize NLTK: {str(e)}")
     # Fallback stopwords if NLTK import fails
@@ -45,7 +56,7 @@ except Exception as e:
 class AIService:
     def __init__(self):
         # Use environment variable for the API key
-        self.api_key = os.getenv('HUGGINGFACE_API_KEY', '')
+        self.api_key = os.getenv('HUGGINGFACE_API_KEY', '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')
         self.api_url = "https://api-inference.huggingface.co/models/"
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"
         self.use_api = bool(self.api_key)
@@ -169,63 +180,69 @@ class AIService:
 
     def summarize_text(self, text: str) -> str:
         """Generate a summary of the text"""
-        if not text.strip():
+        if not text or not text.strip():
             return "No content to summarize."
 
-        if self.use_api:
-            prompt = f"""Summarize the following text in a concise paragraph:
+        try:
+            if self.use_api:
+                # Limit text to first 1500 characters to avoid token limits
+                # For longer texts, we could split and summarize parts separately
+                prompt = f"""Summarize the following text in a concise paragraph:
 
 {text[:1500]}
 
 Your summary should capture the main points and key details in a clear, coherent manner.
 """
-            result = self._query_model(prompt, "summarize")
+                result = self._query_model(prompt, "summarize")
 
-            if result:
-                # Clean up the response
-                # Remove any prefixes like "Summary:" or "Here's a summary:"
-                cleaned_result = re.sub(r'^(Summary:|Here\'s a summary:|The summary is:)', '', result, flags=re.IGNORECASE).strip()
+                if result:
+                    # Clean up the response
+                    # Remove any prefixes like "Summary:" or "Here's a summary:"
+                    cleaned_result = re.sub(r'^(Summary:|Here\'s a summary:|The summary is:)', '', result, flags=re.IGNORECASE).strip()
 
-                # Extract the summary from the response
-                lines = cleaned_result.split('\n')
-                # Find lines that look like a summary (not instructions or empty lines)
-                summary_lines = [line.strip() for line in lines if len(line.strip()) > 20]
+                    # Extract the summary from the response
+                    lines = cleaned_result.split('\n')
+                    # Find lines that look like a summary (not instructions or empty lines)
+                    summary_lines = [line.strip() for line in lines if len(line.strip()) > 20]
 
-                if summary_lines:
-                    return " ".join(summary_lines)
-                else:
-                    return cleaned_result
+                    if summary_lines:
+                        return " ".join(summary_lines)
+                    else:
+                        return cleaned_result
 
-        # Local implementation as fallback
-        sentences = self._extract_sentences(text)
+            # Local implementation as fallback
+            sentences = self._extract_sentences(text)
 
-        if not sentences:
-            return "No content to summarize."
+            if not sentences:
+                return "No content to summarize."
 
-        # Use the first sentence as the beginning of the summary
-        summary = sentences[0]
+            # Use the first sentence as the beginning of the summary
+            summary = sentences[0]
 
-        # Extract keywords
-        keywords = self._extract_keywords(text)
+            # Extract keywords
+            keywords = self._extract_keywords(text)
 
-        # Find sentences with keywords (excluding the first sentence)
-        important_sentences = []
-        for sentence in sentences[1:]:
-            score = sum(1 for keyword in keywords if keyword.lower() in sentence.lower())
-            if score > 0:
-                important_sentences.append((sentence, score))
+            # Find sentences with keywords (excluding the first sentence)
+            important_sentences = []
+            for sentence in sentences[1:]:
+                score = sum(1 for keyword in keywords if keyword.lower() in sentence.lower())
+                if score > 0:
+                    important_sentences.append((sentence, score))
 
-        # Sort by importance score and add top sentences to summary
-        important_sentences.sort(key=lambda x: x[1], reverse=True)
-        for sentence, _ in important_sentences[:2]:  # Add up to 2 more important sentences
-            if sentence not in summary:
-                summary += " " + sentence
+            # Sort by importance score and add top sentences to summary
+            important_sentences.sort(key=lambda x: x[1], reverse=True)
+            for sentence, _ in important_sentences[:2]:  # Add up to 2 more important sentences
+                if sentence not in summary:
+                    summary += " " + sentence
 
-        # Add key concepts
-        if keywords:
-            summary += f" Key concepts: {', '.join(keywords[:5])}."
+            # Add key concepts
+            if keywords:
+                summary += f" Key concepts: {', '.join(keywords[:5])}."
 
-        return summary
+            return summary
+        except Exception as e:
+            logger.error(f"Error during summarization: {str(e)}")
+            return "Error generating summary. Please try again."
 
     def generate_quiz(self, text: str) -> Dict[str, List[Dict[str, Any]]]:
         """Generate a quiz based on the text"""

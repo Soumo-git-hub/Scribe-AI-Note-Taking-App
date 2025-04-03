@@ -38,6 +38,9 @@ htmlcov/
 backend/temp/*
 !backend/temp/.gitkeep
 
+# BFG tool
+tools/bfg.jar
+
 # Logs
 *.log
 npm-debug.log*

@@ -75,9 +75,23 @@ Scribe is an intelligent note-taking application with AI-powered features for su
 Create a `.env` file in the backend directory with the following variables:
 
 ```
+# Hugging Face API credentials
 HUGGINGFACE_API_KEY=your_api_key_here
+HUGGINGFACE_MODEL=mistralai/Mistral-7B-Instruct-v0.3
+
+# CORS settings
 ALLOWED_ORIGINS=*
 ```
+
+You can use the provided `.env.example` file as a template.
+
+### Securing API Keys
+
+For security reasons:
+1. Never commit your actual API keys to version control
+2. Use environment variables instead of hardcoding keys
+3. When deploying, use secure methods to manage secrets
+4. For local development, keep your .env file in .gitignore
 
 ## Project Structure
 

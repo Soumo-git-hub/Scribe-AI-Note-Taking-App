@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger("api_test")
 
 # Use a placeholder instead of the actual API key
-API_KEY = "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"  # Replace with your key when running locally
+API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")  # Get from environment variable
 
 def test_api_key():
     """Test if the API key is present and valid"""
@@ -26,7 +26,7 @@ def test_api_key():
     logger.info(f"API Key length: {len(api_key) if api_key else 0}")
     
     if not api_key:
-        logger.error("No API key found. Please set the API_KEY variable in this script.")
+        logger.error("No API key found. Please set the HUGGINGFACE_API_KEY environment variable.")
         return False
     
     return True

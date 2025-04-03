@@ -135,7 +135,7 @@ class NoteUpdate(BaseModel):
 # API Configuration class
 class APIConfig:
     def __init__(self):
-        self.huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY", "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")
+        self.huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY", "")
         self.huggingface_api_url = "https://api-inference.huggingface.co/models/"
         self.model = "mistralai/Mistral-7B-Instruct-v0.3"
         self.max_retries = 3

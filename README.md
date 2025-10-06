@@ -1,8 +1,8 @@
-# Scribe: A Personalized Learning Companion 🏆
+# Scribe: A Personalized Learning Companion
 <div align="center">
 <img src="Ai%20Note%20Taking%20App/Content/Images/logo.png" alt="Scribe Logo" width="200"/>
 
-<h3>Winner of SeamEdu Award 2025 for Best Performing Web Application</h3>
+<h3>Winner of SeamEdu Award 2025 for Best Performing Web Application 🏆</h3>
 <p>Developed by Soumyadyuti Dey</p>
 </div>
 
@@ -147,36 +147,67 @@ POST /api/upload-pdf - Process PDF files
 
 POST /api/handwriting - Process handwritten notes
 
-## 🎥 Demo & Screenshots
+## 🎥 Demo
+
 [Watch the full demo video](Ai%20Note%20Taking%20App/Content/Video/Demo%20Video%20-%20Scribe%20-%20AI%20Note%20Taking%20Web%20App.mp4)
 
-A detailed architecture diagram and screenshots can be found in the Content/Images directory.
+## 📸 Screenshots
+
+### Application Architecture
+<div align="center">
+  <img src="Ai%20Note%20Taking%20App/Content/Images/AI_Note_App_Architecture.png" alt="Application Architecture" width="600"/>
+  <br><b>Application Architecture</b>
+</div>
+
+### Key Features
+
+<div align="center">
+  <img src="Ai%20Note%20Taking%20App/Content/Images/AI%20Summary.png" alt="AI Summary Feature" width="400"/>
+  <br><b>AI-Powered Summarization</b><br><br>
+  <img src="Ai%20Note%20Taking%20App/Content/Images/Quiz.png" alt="Quiz Generation" width="400"/>
+  <br><b>Quiz Generation</b><br><br>
+  <img src="Ai%20Note%20Taking%20App/Content/Images/Mind%20Map.png" alt="Mind Map Creation" width="400"/>
+  <br><b>Mind Map Creation</b>
+</div>
+
+### User Interface
+
+<div align="center">
+  <img src="Ai%20Note%20Taking%20App/Content/Images/Authentication%20Login.png" alt="Login Interface" width="400"/>
+  <br><b>Authentication/Login</b><br><br>
+  <img src="Ai%20Note%20Taking%20App/Content/Images/Pdf%20Upload.png" alt="PDF Upload" width="400"/>
+  <br><b>PDF Upload & Extraction</b><br><br>
+  <img src="Ai%20Note%20Taking%20App/Content/Images/Markdown%20Support.png" alt="Markdown Support" width="400"/>
+  <br><b>Markdown Support</b><br><br>
+  <img src="Ai%20Note%20Taking%20App/Content/Images/Dark%20Mode.png" alt="Dark Mode" width="400"/>
+  <br><b>Dark Mode</b>
+</div>
 
 ## 📄 Documentation
-Scribe - AI Note Taking App - Documentation (PDF)
+
+- [AI-Powered Note-Taking App (PDF)](Ai%20Note%20Taking%20App/Content/AI-Powered%20Note-Taking%20App.pdf)
+- [Scribe - AI Note Taking App - Documentation (PDF)](Ai%20Note%20Taking%20App/Content/Scribe%20-%20AI%20Note%20Taking%20App%20-%20Documentation.pdf)
 
 ## 🤝 Contributing
-Fork the repository
 
-Create your feature branch (git checkout -b feature/amazing-feature)
-
-Commit your changes (git commit -m 'Add some amazing feature')
-
-Push to the branch (git push origin feature/amazing-feature)
-
-Open a Pull Request
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👨‍💻 Author
-Soumyadyuti Dey
 
-GitHub: @Soumo-git-hub
-
-LinkedIn: Soumyadyuti Dey
+**Soumyadyuti Dey**
+- GitHub: [@Soumo-git-hub](https://github.com/Soumo-git-hub)
+- LinkedIn: [Soumyadyuti Dey](https://www.linkedin.com/in/soumyadyuti-dey-245sd/)
 
 ## 🙏 Acknowledgments
-SeamEdu for recognizing the project's innovation and impact.
 
-The open-source community for their invaluable tools and libraries.
+- SeamEdu for recognizing the project's innovation
+- All contributors and supporters of the project
+- The open-source community for their invaluable tools and libraries

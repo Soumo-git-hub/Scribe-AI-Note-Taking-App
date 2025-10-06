@@ -1,9 +1,9 @@
-# AI Note Taking App 🏆
+# Scribe: A Personalized Learning Companion 🏆
 
 <div align="center">
-  <img src="Ai%20Note%20Taking%20App/Content/Images/Logo.png" alt="AI Note Taking App Logo" width="200"/>
+  <img src="Ai%20Note%20Taking%20App/frontend/favicon.ico" alt="Scribe Logo" width="200"/>
   
-  <h3>Winner of SeamEdu Award for Best Performing Web Application</h3>
+  <h3>Winner of SeamEdu Award 2025 for Best Performing Web Application</h3>
   <p>Developed by Soumyadyuti Dey</p>
 </div>
 
